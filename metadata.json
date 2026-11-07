@@ -1,0 +1,10 @@
+{
+  "name": "PULO-MAPS — Pulau Merak Kecil",
+  "description": "Portal resmi informasi wisata, WebGIS zonasi keselamatan bahari, dan katalog harga transparan Pulau Merak Kecil Cilegon oleh Komunitas Anak Pulo.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

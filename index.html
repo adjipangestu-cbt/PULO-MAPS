@@ -1,0 +1,2339 @@
+<!doctype html>
+<html lang="id" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PULO-MAPS — Pulau Merak Kecil | Portal Resmi Wisata & Keselamatan Bahari</title>
+    <meta name="description" content="Portal resmi informasi wisata, WebGIS zonasi keselamatan bahari, dan katalog harga transparan Pulau Merak Kecil Cilegon oleh Komunitas Anak Pulo." />
+    
+    <!-- OpenGraph & Social Cards -->
+    <meta property="og:title" content="PULO-MAPS — Pulau Merak Kecil | Portal Resmi Wisata & WebGIS" />
+    <meta property="og:description" content="Eksplorasi Pulau Merak Kecil dengan aman, nyaman & transparan. Dikelola oleh Komunitas Anak Pulo Cilegon." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/assets/aistudio/Camping_1_8f2d87d3.jpeg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/png" href="/assets/aistudio/image_8e491d81.png" />
+
+    <!-- Google Fonts: Plus Jakarta Sans (Headings), DM Sans (Body), JetBrains Mono (Numbers/Tech) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,300..800&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- Leaflet.js CSS & JS for Interactive WebGIS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              sand: {
+                DEFAULT: '#F7F4EF',
+                50: '#FDFCFB',
+                100: '#F7F4EF',
+                200: '#EFE9DE',
+                border: '#E5DEC9',
+              },
+              abyss: {
+                DEFAULT: '#0B1D28',
+                950: '#050D12',
+                900: '#081720',
+                800: '#0B1D28',
+                700: '#142E40',
+                600: '#1C3E56',
+              },
+              lagoon: {
+                DEFAULT: '#0D9488',
+                light: '#14B8A6',
+                dark: '#0F766E',
+                50: '#F0FDFA',
+              },
+              coral: {
+                DEFAULT: '#FF6B4A',
+                hover: '#E85535',
+                light: '#FF8A6F',
+                50: '#FFF5F2',
+              },
+              safe: '#10B981',
+              danger: '#E11D48',
+              warning: '#F59E0B',
+            },
+            fontFamily: {
+              heading: ['"Plus Jakarta Sans"', 'sans-serif'],
+              body: ['"DM Sans"', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'monospace'],
+            },
+            borderRadius: {
+              '3xl': '1.75rem',
+              '4xl': '2.25rem',
+            },
+            boxShadow: {
+              bento: '0 4px 24px -2px rgba(11, 29, 40, 0.06), 0 1px 4px 0 rgba(11, 29, 40, 0.04)',
+              'bento-hover': '0 12px 32px -4px rgba(11, 29, 40, 0.12), 0 4px 8px 0 rgba(11, 29, 40, 0.06)',
+            }
+          }
+        }
+      }
+    </script>
+
+    <style>
+      /* Marquee infinite scroll animation */
+      @keyframes marquee {
+        0% { transform: translateX(0%); }
+        100% { transform: translateX(-50%); }
+      }
+      .animate-marquee {
+        display: flex;
+        width: 200%;
+        animation: marquee 28s linear infinite;
+      }
+      .animate-marquee:hover {
+        animation-play-state: paused;
+      }
+
+      /* Custom Leaflet styling to match Stokt aesthetic */
+      .leaflet-popup-content-wrapper {
+        background: #FFFFFF !important;
+        color: #0B1D28 !important;
+        border-radius: 1.25rem !important;
+        box-shadow: 0 16px 36px -4px rgba(11, 29, 40, 0.2) !important;
+        border: 1px solid #E5DEC9 !important;
+        padding: 4px !important;
+        font-family: 'DM Sans', sans-serif !important;
+      }
+      .leaflet-popup-tip {
+        background: #FFFFFF !important;
+        border: 1px solid #E5DEC9 !important;
+      }
+      .leaflet-popup-content {
+        margin: 10px 12px !important;
+        line-height: 1.4 !important;
+      }
+      .leaflet-container {
+        font-family: 'DM Sans', sans-serif !important;
+      }
+
+      /* Gentle 'breathing-pin' pulsation effect for all 'Posko' category markers in #islandMap (Configurable) */
+      @keyframes breathing-pin {
+        0%, 100% {
+          transform: scale(1);
+          box-shadow: 0 4px 12px rgba(11, 29, 40, 0.28), 0 0 0 0 rgba(255, 107, 74, 0.42);
+        }
+        50% {
+          transform: scale(1.07);
+          box-shadow: 0 6px 16px rgba(11, 29, 40, 0.34), 0 0 0 8px rgba(255, 107, 74, 0);
+        }
+      }
+      @keyframes breathing-pin-halo {
+        0% {
+          transform: scale(0.98);
+          opacity: 0.55;
+        }
+        70%, 100% {
+          transform: scale(1.55);
+          opacity: 0;
+        }
+      }
+      #islandMap .breathing-pin,
+      #islandMap .posko-breathing-pin {
+        position: relative;
+        animation: breathing-pin 3.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        will-change: transform, box-shadow;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+      }
+      #islandMap .breathing-pin::before,
+      #islandMap .posko-breathing-pin::before {
+        content: "";
+        position: absolute;
+        inset: -4px;
+        border-radius: 9999px;
+        border: 1.5px solid rgba(255, 107, 74, 0.75);
+        animation: breathing-pin-halo 3.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+        pointer-events: none;
+      }
+      /* Static mode override when user toggles off 'Posko' marker animations */
+      #islandMap.static-posko-markers .breathing-pin,
+      #islandMap.static-posko-markers .posko-breathing-pin,
+      #islandMap[data-posko-animation="static"] .breathing-pin,
+      #islandMap[data-posko-animation="static"] .posko-breathing-pin,
+      #islandMap .static-pin {
+        position: relative;
+        animation: none !important;
+        transform: scale(1) !important;
+        box-shadow: 0 4px 12px rgba(11, 29, 40, 0.32) !important;
+      }
+      #islandMap.static-posko-markers .breathing-pin::before,
+      #islandMap.static-posko-markers .posko-breathing-pin::before,
+      #islandMap[data-posko-animation="static"] .breathing-pin::before,
+      #islandMap[data-posko-animation="static"] .posko-breathing-pin::before,
+      #islandMap .static-pin::before {
+        display: none !important;
+        animation: none !important;
+      }
+
+      /* Diagonal arrow hover rotation */
+      .group:hover .rotate-arrow {
+        transform: rotate(45deg);
+      }
+      .rotate-arrow {
+        display: inline-block;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      /* Bento Card Scroll Reveal (Fade-In & Slide-Up via Intersection Observer) */
+      .bento-reveal {
+        opacity: 0;
+        transform: translateY(28px) scale(0.985);
+        transition:
+          opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+          transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+          box-shadow 0.3s ease,
+          border-color 0.3s ease;
+        transition-delay: var(--reveal-delay, 0ms);
+        will-change: opacity, transform;
+      }
+      .bento-reveal.is-revealed {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .bento-reveal {
+          opacity: 1 !important;
+          transform: none !important;
+          transition: none !important;
+        }
+      }
+
+      /* Custom scrollbars */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #F7F4EF;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #D8CEB6;
+        border-radius: 9999px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #0D9488;
+      }
+    </style>
+  </head>
+
+  <body class="bg-[#F7F4EF] text-[#0B1D28] font-body antialiased selection:bg-[#0D9488] selection:text-white min-h-screen">
+
+    <!-- FLOATING PILL NAVBAR -->
+    <div class="sticky top-4 z-50 px-3 sm:px-4 max-w-7xl mx-auto pointer-events-none">
+      <nav class="pointer-events-auto bg-white/90 backdrop-blur-md rounded-full border border-[#E5DEC9] pl-3 pr-2.5 sm:px-6 py-2.5 sm:py-3 shadow-bento flex items-center justify-between gap-2 transition-all duration-300">
+        
+        <!-- Brand Logo -->
+        <a href="#" class="flex items-center gap-2 sm:gap-3 group shrink-0">
+          <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white border border-[#E5DEC9] shadow-sm overflow-hidden flex items-center justify-center shrink-0 group-hover:border-[#0D9488] transition-colors">
+            <img src="/assets/aistudio/image_8e491d81.png" alt="Logo Resmi PULO-MAPS Pulau Merak Kecil" class="w-full h-full object-contain scale-110" />
+          </div>
+          <div>
+            <div class="font-heading font-extrabold text-sm sm:text-lg tracking-tight leading-none text-[#0B1D28] flex items-center gap-1 whitespace-nowrap">
+              PULO-MAPS
+              <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#FF6B4A]"></span>
+            </div>
+            <div class="font-mono text-[9px] sm:text-[10px] text-slate-500 uppercase tracking-wider leading-none mt-0.5 whitespace-nowrap">
+              Pulau Merak Kecil
+            </div>
+          </div>
+        </a>
+
+        <!-- Desktop Menu -->
+        <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-700">
+          <a href="#tiket" class="hover:text-[#0D9488] transition-colors py-1">Tiket & Akses</a>
+          <a href="#webgis" class="hover:text-[#0D9488] transition-colors py-1 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-[#10B981]"></span>
+            Peta
+          </a>
+          <a href="#katalog" class="hover:text-[#0D9488] transition-colors py-1">Katalog Paket</a>
+          <a href="#edukasi" class="hover:text-[#0D9488] transition-colors py-1">Edukasi & P3K</a>
+          <a href="#posko" class="hover:text-[#0D9488] transition-colors py-1">Info Posko</a>
+        </div>
+
+        <!-- Action Button -->
+        <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          <a href="https://wa.me/628176789420?text=Halo%20Admin%20Posko%20Anak%20Pulo,%20saya%20ingin%20bertanya%20informasi%20kunjungan%20ke%20Pulau%20Merak%20Kecil." 
+             target="_blank" 
+             rel="noopener noreferrer"
+             class="group rounded-full px-3 sm:px-5 py-2 text-[11px] sm:text-sm font-bold bg-[#FF6B4A] text-white hover:bg-[#E85535] transition-all duration-200 shadow-sm flex items-center gap-1 sm:gap-1.5 whitespace-nowrap leading-none">
+            <span>Hubungi Posko</span>
+            <span class="rotate-arrow font-mono text-xs sm:text-base leading-none">↗</span>
+          </a>
+
+          <!-- Mobile Hamburger Toggle -->
+          <button id="mobileMenuBtn" aria-label="Buka Menu" class="md:hidden w-9 h-9 flex items-center justify-center text-[#0B1D28] bg-[#F7F4EF] hover:bg-[#E5DEC9]/60 border border-[#E5DEC9] rounded-full transition-colors shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      <!-- Mobile Dropdown Menu -->
+      <div id="mobileMenu" class="hidden pointer-events-auto mt-2 bg-white rounded-3xl border border-[#E5DEC9] p-5 shadow-2xl space-y-3 font-medium text-slate-800 transition-all">
+        <a href="#tiket" class="block py-2 px-3 rounded-xl hover:bg-[#F7F4EF] hover:text-[#0D9488]">🎟️ Tiket & Akses Dasar</a>
+        <a href="#webgis" class="block py-2 px-3 rounded-xl hover:bg-[#F7F4EF] hover:text-[#0D9488]">🗺️ Peta WebGIS & Zonasi Keselamatan</a>
+        <a href="#katalog" class="block py-2 px-3 rounded-xl hover:bg-[#F7F4EF] hover:text-[#0D9488]">📦 Katalog Paket Wisata & Camping</a>
+        <a href="#edukasi" class="block py-2 px-3 rounded-xl hover:bg-[#F7F4EF] hover:text-[#0D9488]">🩹 Edukasi & Penanganan Bulu Babi</a>
+        <a href="#posko" class="block py-2 px-3 rounded-xl hover:bg-[#F7F4EF] hover:text-[#0D9488]">🏕️ Aturan Posko & Akses Mabak</a>
+      </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-20 space-y-12 sm:space-y-16">
+
+      <!-- HERO BENTO GRID SECTION (STOKT EDITORIAL STYLE) -->
+      <section class="grid grid-cols-12 gap-4 sm:gap-6 pt-4">
+        
+        <!-- CARD 1: MAIN HERO BANNER (COL-SPAN 12 LG:COL-SPAN 8) -->
+        <div class="col-span-12 lg:col-span-8 bg-[#0B1D28] text-white rounded-3xl p-6 sm:p-10 flex flex-col justify-between border border-[#0B1D28] shadow-bento relative overflow-hidden">
+          
+          <!-- Subtle island contour background gradient -->
+          <div class="absolute -right-20 -bottom-20 w-96 h-96 bg-[#0D9488]/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -left-20 -top-20 w-80 h-80 bg-[#FF6B4A]/15 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="relative z-10 space-y-6">
+            <!-- Bold Oversized Editorial Headline -->
+            <h1 class="font-heading font-extrabold text-3xl sm:text-5xl lg:text-[3.5rem] tracking-tight leading-[1.08] text-white">
+              EKSPLORASI PULAU MERAK KECIL DENGAN <span class="text-[#14B8A6]">AMAN</span>, <span class="text-[#FF6B4A]">NYAMAN</span> & TRANSPARAN
+            </h1>
+
+            <p class="text-white/80 text-base sm:text-lg max-w-2xl font-normal leading-relaxed">
+              Selamat datang di portal informasi resmi Pulau Merak Kecil. Dikelola swadaya oleh pemuda pesisir <span class="text-white font-semibold">Komunitas Anak Pulo</span> untuk pariwisata bahari berkelanjutan di Selat Sunda, perlindungan terumbu karang, dan kepastian tarif resmi tanpa perantara.
+            </p>
+
+            <!-- CTA Button Group -->
+            <div class="pt-2 flex flex-wrap items-center gap-3 sm:gap-4">
+              <a href="#webgis" class="group rounded-full px-6 py-3.5 text-sm sm:text-base font-bold bg-[#FF6B4A] hover:bg-[#E85535] text-white transition-all duration-200 shadow-md flex items-center gap-2">
+                <span>Buka Peta Zonasi WebGIS</span>
+                <span class="rotate-arrow font-mono text-lg">↗</span>
+              </a>
+              <a href="#katalog" class="group rounded-full px-6 py-3.5 text-sm sm:text-base font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all duration-200 flex items-center gap-2">
+                <span>Lihat Katalog Harga Resmi</span>
+                <span class="rotate-arrow font-mono text-lg">↗</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Bottom Real Photo Preview Strip -->
+          <div class="relative z-10 mt-8 pt-6 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="group relative rounded-2xl overflow-hidden aspect-[4/3] border border-white/15">
+              <img src="/assets/aistudio/Camping_1_8f2d87d3.jpeg" alt="Gerbang Camping Ground Pulau Merak Kecil" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2">
+                <span class="text-[11px] font-mono text-white font-medium">Camping Ground</span>
+              </div>
+            </div>
+            <div class="group relative rounded-2xl overflow-hidden aspect-[4/3] border border-white/15">
+              <img src="/assets/aistudio/Snorkeling_1_0f4e6b87.jpeg" alt="Snorkeling Bawah Laut Pulau Merak Kecil" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2">
+                <span class="text-[11px] font-mono text-white font-medium">Terumbu Karang</span>
+              </div>
+            </div>
+            <div class="group relative rounded-2xl overflow-hidden aspect-[4/3] border border-white/15">
+              <img src="/assets/aistudio/Paddle_boat_2_45922c43.jpeg" alt="Paddle Board Drone Foto" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2">
+                <span class="text-[11px] font-mono text-white font-medium">Paddle + Drone</span>
+              </div>
+            </div>
+            <div class="group relative rounded-2xl overflow-hidden aspect-[4/3] border border-white/15">
+              <img src="/assets/aistudio/Jetski_fdc95259.jpeg" alt="Jetski Watersport" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2">
+                <span class="text-[11px] font-mono text-white font-medium">Jetski 15 Menit</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 2: AKSES PENYEBRANGAN & FASILITAS DASAR (COL-SPAN 12 LG:COL-SPAN 4) -->
+        <div id="tiket" class="scroll-mt-24 col-span-12 lg:col-span-4 bg-white rounded-3xl p-6 sm:p-8 border border-[#E5DEC9] shadow-bento flex flex-col justify-center">
+          <div>
+            <!-- Price Breakdown List with JetBrains Mono -->
+            <div class="space-y-3 font-mono">
+              
+              <div class="p-3.5 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-xs text-slate-600 font-sans font-semibold">Penyebrangan Kapal PP</div>
+                  <div class="text-[11px] text-slate-400 font-sans">Kapal Nelayan Mabak ⇄ Merak Kecil</div>
+                </div>
+                <div class="text-lg font-bold text-[#FF6B4A] whitespace-nowrap shrink-0">Rp 15.000</div>
+              </div>
+
+              <!-- Available Facilities -->
+              <div class="p-3 rounded-2xl bg-white border border-[#E5DEC9] mt-4">
+                <div class="text-xs font-sans font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                  <svg class="w-4 h-4 text-[#0D9488]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                  Fasilitas Umum di Pulau (Termasuk):
+                </div>
+                <div class="flex flex-wrap gap-2 text-xs font-sans">
+                  <span class="rounded-full px-2.5 py-1 bg-slate-100 text-slate-700 font-medium">🚻 Toilet & Kamar Bilas</span>
+                  <span class="rounded-full px-2.5 py-1 bg-slate-100 text-slate-700 font-medium">🕌 Mushola Pesisir</span>
+                  <span class="rounded-full px-2.5 py-1 bg-slate-100 text-slate-700 font-medium">🏖️ Gazebo & Tempat Teduh</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 3: INDIKATOR DDK (DAYA DUKUNG KAWASAN) & ATURAN POSKO (COL-SPAN 12) -->
+        <div class="col-span-12 bg-white rounded-3xl p-6 sm:p-8 border border-[#E5DEC9] shadow-bento grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+          
+          <!-- DDK Indicator -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono uppercase font-bold text-slate-500 tracking-wider">DAYA DUKUNG KAWASAN (DDK)</span>
+              <span class="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">KONDISI IDEAL</span>
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span class="font-mono font-extrabold text-3xl text-[#0B1D28]">285</span>
+              <span class="font-mono text-sm text-slate-500">/ 500 Max Wisatawan/Hari</span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-full h-3 rounded-full bg-slate-100 overflow-hidden border border-[#E5DEC9]">
+              <div class="h-full bg-gradient-to-r from-[#0D9488] to-[#10B981] rounded-full" style="width: 57%;"></div>
+            </div>
+            <p class="text-[12px] text-slate-500 leading-normal">
+              Batas kuota harian diterapkan demi menjaga kelestarian terumbu karang dan vegetasi alami pulau.
+            </p>
+          </div>
+
+          <!-- Cuaca & Angin Barat (Dynamic Weather Icons Card) -->
+          <div id="weatherCard" class="space-y-3 p-4 sm:p-5 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] transition-all duration-300">
+            <!-- Header & Mode Selector -->
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-700 uppercase">
+                <svg class="w-4 h-4 text-[#0D9488] shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                  <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                  <path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                </svg>
+                <span>KONDISI LAUT & ANGIN</span>
+              </div>
+
+              <!-- Interactive Weather Condition Switcher -->
+              <div class="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#E5DEC9]" role="group" aria-label="Simulasi Status Cuaca">
+                <button type="button" class="weather-mode-btn px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1 text-slate-500 hover:text-[#0B1D28]" data-weather="cerah" aria-label="Cuaca Cerah">
+                  <svg class="w-3 h-3 text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                  <span>Cerah</span>
+                </button>
+                <button type="button" class="weather-mode-btn active px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1 bg-[#0B1D28] text-white shadow-xs" data-weather="berawan" aria-label="Cuaca Berawan">
+                  <svg class="w-3 h-3 text-sky-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg>
+                  <span>Berawan</span>
+                </button>
+                <button type="button" class="weather-mode-btn px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1 text-slate-500 hover:text-[#0B1D28]" data-weather="angin-barat" aria-label="Angin Barat">
+                  <svg class="w-3 h-3 text-rose-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.8 19.6A2 2 0 1 0 14 16H2"/><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"/><path d="M9.8 4.4A2 2 0 1 1 11 8H2"/></svg>
+                  <span>Angin</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Dynamic Weather Hero Row with Large Lucide SVG Icon -->
+            <div class="flex items-center justify-between bg-white rounded-xl p-3 border border-[#E5DEC9]">
+              <div class="flex items-center gap-3">
+                <div id="weatherIconWrapper" class="w-11 h-11 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-[#0D9488] shrink-0 transition-colors duration-300">
+                  <!-- Default: CloudSun Lucide SVG -->
+                  <svg id="weatherMainSvg" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="text-[10px] font-mono uppercase text-slate-400">STATUS CUACA SELAT SUNDA</div>
+                  <div id="weatherConditionTitle" class="font-heading font-extrabold text-sm text-[#0B1D28]">Cerah Berawan</div>
+                </div>
+              </div>
+              <div class="text-right font-mono">
+                <span id="weatherTempBadge" class="inline-block rounded-lg px-2 py-1 text-xs font-bold bg-[#F7F4EF] text-[#0B1D28] border border-[#E5DEC9]">29°C · Teduh</span>
+              </div>
+            </div>
+
+            <!-- Metrics Grid with Lucide Waves & Wind Icons -->
+            <div class="grid grid-cols-2 gap-2.5 text-xs font-mono">
+              <div class="bg-white/80 rounded-xl p-2.5 border border-[#E5DEC9]/80 flex items-start gap-2">
+                <svg class="w-4 h-4 text-[#0EA5E9] shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                  <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                  <path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                </svg>
+                <div>
+                  <span class="text-slate-400 block text-[10px]">GELOMBANG</span>
+                  <span id="weatherWaveValue" class="font-bold text-[#0B1D28] text-xs sm:text-sm">0.2 — 0.4 Meter</span>
+                </div>
+              </div>
+              <div class="bg-white/80 rounded-xl p-2.5 border border-[#E5DEC9]/80 flex items-start gap-2">
+                <svg class="w-4 h-4 text-[#0D9488] shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12.8 19.6A2 2 0 1 0 14 16H2"/>
+                  <path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"/>
+                  <path d="M9.8 4.4A2 2 0 1 1 11 8H2"/>
+                </svg>
+                <div>
+                  <span class="text-slate-400 block text-[10px]">KEC. ANGIN</span>
+                  <span id="weatherWindValue" class="font-bold text-[#0D9488] text-xs sm:text-sm">7–10 Knot (Barat)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Advisory Status Row -->
+            <div id="weatherAdvisoryBox" class="text-[11px] text-emerald-700 font-medium flex items-center gap-1.5 pt-0.5">
+              <span id="weatherAdvisoryDot" class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+              <span id="weatherAdvisoryText">Aman untuk Berenang, Snorkeling & Paddleboard.</span>
+            </div>
+          </div>
+
+          <!-- Aturan Kebersihan Posko Zero Waste -->
+          <div class="space-y-2 p-4 rounded-2xl bg-[#0B1D28] text-white">
+            <div class="flex items-center justify-between text-xs font-mono text-[#FF6B4A] font-bold">
+              <span>ZERO WASTE POLICY</span>
+              <span>♻️ POSKO KEBERSIHAN</span>
+            </div>
+            <h3 class="font-heading font-bold text-sm text-white">
+              Bebas Tiket Masuk • Kontribusi Kebersihan & Penyebrangan
+            </h3>
+            <p class="text-white/80 text-xs leading-relaxed">
+              Tidak ada tiket masuk pulau. Hanya biaya penyebrangan kapal PP <span class="font-mono text-[#14B8A6] font-bold">Rp 15.000 / orang</span> serta kontribusi kebersihan <span class="font-mono text-[#FF8A6F] font-bold">Rp 2.000 / orang</span> (atau wajib membawa kantong sampah sendiri).
+            </p>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- MARQUEE RUNNING TEXT SECTION DIVIDER -->
+      <section class="overflow-hidden py-3 border-y border-[#E5DEC9] bg-white rounded-2xl shadow-sm">
+        <div class="animate-marquee whitespace-nowrap text-xs sm:text-sm font-mono font-bold tracking-widest uppercase text-slate-700 flex items-center">
+          <span class="mx-4 text-[#FF6B4A]">PULAU MERAK KECIL</span>
+          <span class="mx-2 text-slate-400">•</span>
+          <span class="mx-4 text-[#0B1D28]">KOMUNITAS ANAK PULO</span>
+          <span class="mx-2 text-slate-400">•</span>
+          <span class="mx-4 text-[#0D9488]">JAGA KEBERSIHAN LAUT</span>
+          <span class="mx-2 text-slate-400">•</span>
+          <span class="mx-4 text-emerald-600">ZONA AMAN WISATA</span>
+          <span class="mx-2 text-slate-400">•</span>
+          <span class="mx-4 text-[#0B1D28]">HARGA TRANSPARAN RESMI</span>
+          <span class="mx-2 text-slate-400">•</span>
+          <span class="mx-4 text-[#FF6B4A]">PULAU MERAK KECIL</span>
+          <span class="mx-2 text-slate-400">•</span>
+          <span class="mx-4 text-[#0B1D28]">KOMUNITAS ANAK PULO</span>
+          <span class="mx-2 text-slate-400">•</span>
+          <span class="mx-4 text-[#0D9488]">JAGA KEBERSIHAN LAUT</span>
+          <span class="mx-2 text-slate-400">•</span>
+          <span class="mx-4 text-emerald-600">ZONA AMAN WISATA</span>
+          <span class="mx-2 text-slate-400">•</span>
+          <span class="mx-4 text-[#0B1D28]">HARGA TRANSPARAN RESMI</span>
+          <span class="mx-2 text-slate-400">•</span>
+        </div>
+      </section>
+
+      <!-- WEBGIS INTERAKTIF (LEAFLET.JS) SECTION -->
+      <section id="webgis" class="scroll-mt-24 space-y-6">
+        
+        <!-- Header & Action Controls -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h2 class="font-heading font-extrabold text-3xl sm:text-4xl text-[#0B1D28] tracking-tight">
+              Peta Zonasi Keselamatan & Titik Fasilitas
+            </h2>
+            <p class="text-slate-600 text-sm sm:text-base mt-1 max-w-2xl">
+              Pantau titik aman berenang, zona waspada bulu babi & karang tajam, area perkemahan resmi, serta lacak posisi Anda secara live dengan GPS.
+            </p>
+          </div>
+
+          <!-- GPS & Focus Action Controls -->
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button id="btnGeoLocate" class="rounded-full px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-bold bg-[#0D9488] hover:bg-[#0F766E] text-white transition-all shadow-sm flex items-center gap-2 cursor-pointer">
+              <span class="animate-pulse">📍</span>
+              <span>Cek Posisi Saya (Live GPS)</span>
+            </button>
+            <button id="btnResetMap" class="rounded-full px-4 py-2.5 text-xs sm:text-sm font-bold bg-white hover:bg-slate-50 text-[#0B1D28] border border-[#E5DEC9] transition-all flex items-center gap-1.5 cursor-pointer">
+              <span>🎯 Fokus Pulau</span>
+            </button>
+            <button id="btnToggleBasemap" class="rounded-full px-4 py-2.5 text-xs sm:text-sm font-bold bg-white hover:bg-slate-50 text-slate-700 border border-[#E5DEC9] transition-all flex items-center gap-1.5 cursor-pointer">
+              <span>🛰️ Mode Satelit / Peta</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Layers Pill Bar -->
+        <div class="bg-white rounded-2xl p-3 border border-[#E5DEC9] shadow-sm flex flex-wrap items-center gap-2 text-xs font-medium">
+          <span class="text-slate-400 font-mono text-[11px] uppercase mr-1">Filter Layer:</span>
+          
+          <button id="filterSafe" class="filter-layer-btn active rounded-full px-3 py-1.5 bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 font-bold flex items-center gap-1.5 transition-colors cursor-pointer" data-zone="safe">
+            <span class="w-2 h-2 rounded-full bg-[#10B981]"></span>
+            Zona Aman Berenang
+          </button>
+
+          <button id="filterDanger" class="filter-layer-btn active rounded-full px-3 py-1.5 bg-[#E11D48]/15 text-[#E11D48] border border-[#E11D48]/30 font-bold flex items-center gap-1.5 transition-colors cursor-pointer" data-zone="danger">
+            <span class="w-2 h-2 rounded-full bg-[#E11D48]"></span>
+            Zona Rawan Bulu Babi & Karang
+          </button>
+
+          <button id="filterCamping" class="filter-layer-btn active rounded-full px-3 py-1.5 bg-[#F59E0B]/15 text-[#B45309] border border-[#F59E0B]/30 font-bold flex items-center gap-1.5 transition-colors cursor-pointer" data-zone="camping">
+            <span class="w-2 h-2 rounded-full bg-[#F59E0B]"></span>
+            Zona Camping Ground
+          </button>
+
+          <button id="filterConservation" class="filter-layer-btn active rounded-full px-3 py-1.5 bg-[#0EA5E9]/15 text-[#0369A1] border border-[#0EA5E9]/30 font-bold flex items-center gap-1.5 transition-colors cursor-pointer" data-zone="conservation">
+            <span class="w-2 h-2 rounded-full bg-[#0EA5E9]"></span>
+            Zona Konservasi Pohon
+          </button>
+
+          <button id="filterMarkers" class="filter-layer-btn active rounded-full px-3 py-1.5 bg-[#0B1D28]/10 text-[#0B1D28] border border-[#0B1D28]/20 font-bold flex items-center gap-1.5 transition-colors cursor-pointer" data-zone="markers">
+            <span>📌</span>
+            Titik Fasilitas & Posko
+          </button>
+        </div>
+
+        <!-- Big Bento Card Wrapping Leaflet Map -->
+        <div class="bg-white rounded-3xl p-2 sm:p-3 border-2 border-[#0B1D28] shadow-2xl relative overflow-hidden">
+          
+          <!-- Map Container -->
+          <div id="islandMap" class="w-full h-[520px] sm:h-[620px] rounded-2xl z-0 relative"></div>
+
+          <!-- Floating GPS status notification -->
+          <div id="gpsStatusCard" class="hidden absolute top-6 left-6 z-[1000] bg-white/95 backdrop-blur-md rounded-2xl p-4 border border-[#E5DEC9] shadow-xl max-w-xs transition-all">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0D9488] opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-[#0D9488]"></span>
+                </span>
+                <span class="font-heading font-bold text-xs text-[#0B1D28]">GPS Lokasi Aktif</span>
+              </div>
+              <button id="btnCloseGpsCard" class="text-slate-400 hover:text-slate-600 text-xs">✕</button>
+            </div>
+            <div id="gpsStatusText" class="text-xs text-slate-600 mt-2 font-mono">
+              Mendeteksi koordinat Anda...
+            </div>
+            <div id="gpsZoneAlert" class="mt-2 text-[11px] font-sans font-medium hidden"></div>
+          </div>
+
+          <!-- Bottom Legend Quick Pill Strip -->
+          <div class="absolute bottom-6 left-6 right-6 z-[1000] pointer-events-none hidden md:flex justify-between items-center">
+            <div class="pointer-events-auto bg-white/95 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-[#E5DEC9] shadow-lg flex items-center gap-4 text-xs font-mono">
+              <span class="font-bold text-[#0B1D28]">Pusat Koordinat:</span>
+              <span>-5.9392°S, 105.9982°E</span>
+              <span class="text-slate-300">|</span>
+              <span class="text-slate-500">Ketinggian: 0 - 18 mdpl</span>
+            </div>
+            <div class="pointer-events-auto bg-[#0B1D28]/95 backdrop-blur-md text-white rounded-2xl px-4 py-2.5 shadow-lg text-xs font-medium flex items-center gap-2">
+              <span class="text-[#FF6B4A]">⚠️ Peringatan:</span>
+              <span>Patuhi bendera merah keselamatan di sisi barat pulau!</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Zone Description Modal / Bottom Drawer for clicked polygon -->
+        <div id="zoneInfoDrawer" class="hidden bg-white rounded-3xl p-6 border border-[#E5DEC9] shadow-bento transition-all">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div id="zoneDrawerBadge" class="w-4 h-4 rounded-full bg-[#10B981]"></div>
+              <div>
+                <h3 id="zoneDrawerTitle" class="font-heading font-extrabold text-xl text-[#0B1D28]">Nama Zona</h3>
+                <span id="zoneDrawerCategory" class="text-xs font-mono text-slate-500">Zonasi Resmi Pulau</span>
+              </div>
+            </div>
+            <button id="btnCloseZoneDrawer" class="rounded-full p-2 hover:bg-slate-100 text-slate-500">✕</button>
+          </div>
+          <p id="zoneDrawerDesc" class="text-slate-700 text-sm mt-3 leading-relaxed">
+            Deskripsi zona keselamatan...
+          </p>
+          <div id="zoneDrawerRules" class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          </div>
+        </div>
+
+        <!-- BENTO CARD: PETA TEMATIK ILUSTRASI PULAU MERAK KECIL (CUSTOM DESIGN) -->
+        <div id="thematicMapCard" class="bg-white rounded-3xl p-5 sm:p-8 border-2 border-[#0B1D28] shadow-bento space-y-6">
+          
+          <!-- Header & Action Buttons -->
+          <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+            <div>
+              <h3 class="font-heading font-extrabold text-2xl sm:text-3xl text-[#0B1D28] tracking-tight">
+                Peta Tematik Visual Pulau Merak Kecil
+              </h3>
+              <p class="text-slate-600 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
+                Panduan orientasi visual jalur jalan kaki antar fasilitas di dalam pulau, lengkap dengan legenda titik lokasi penting, area terumbu karang, spot wahana air, serta inset alur penyebrangan dari Pantai Mabak.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+              <button type="button" id="btnOpenThematicModal" class="rounded-full px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-bold bg-[#0B1D28] hover:bg-[#0D9488] text-white transition-all shadow-sm flex items-center gap-2 cursor-pointer">
+                <svg class="w-4 h-4 text-[#14B8A6]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                <span>Perbesar Peta (Layar Penuh)</span>
+              </button>
+              <a href="/assets/aistudio/Pulau_1bf8c81d.png" download="Peta-Tematik-Pulau-Merak-Kecil.png" class="rounded-full px-4 py-2.5 text-xs sm:text-sm font-bold bg-[#F7F4EF] hover:bg-[#E5DEC9] text-[#0B1D28] border border-[#E5DEC9] transition-all flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-[#FF6B4A]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                <span>Simpan Peta Offline</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Thematic Map Image Container -->
+          <div id="thematicMapPreviewTrigger" role="button" tabindex="0" aria-label="Klik untuk memperbesar Peta Tematik Pulau Merak Kecil"
+               class="group relative rounded-2xl overflow-hidden border-2 border-[#E5DEC9] bg-[#0B4F5C] shadow-lg cursor-zoom-in">
+            <img src="/assets/aistudio/Pulau_1bf8c81d.png" 
+                 alt="Peta Tematik Ilustrasi Pulau Merak Kecil — Dermaga Penyebrangan, Pos Pusat Informasi, Kantin, Tempat Ibadah, Camp Area, Toilet, Sunset Point, Area Terumbu Karang, dan Area Wahana Air" 
+                 class="w-full h-auto block object-contain group-hover:scale-[1.015] transition-transform duration-500" />
+            <div class="absolute top-4 right-4 pointer-events-none">
+              <span class="rounded-full px-3.5 py-1.5 bg-[#0B1D28]/90 backdrop-blur-md text-white text-[11px] font-mono font-bold border border-white/20 shadow-md flex items-center gap-1.5">
+                <span>🔍 Klik gambar untuk zoom penuh</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Legend Highlights Bar Matching the Thematic Map -->
+          <div class="pt-1 flex flex-wrap items-center justify-between gap-3 border-t border-[#E5DEC9]">
+            <div class="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-700">
+              <span class="font-mono text-[11px] font-bold uppercase text-slate-400 mr-1">Titik Peta Tematik:</span>
+              <span class="rounded-full px-3 py-1 bg-[#F7F4EF] border border-[#E5DEC9] font-semibold">⛵ Dermaga Penyebrangan</span>
+              <span class="rounded-full px-3 py-1 bg-[#F7F4EF] border border-[#E5DEC9] font-semibold">🏠 Pos Pusat Informasi</span>
+              <span class="rounded-full px-3 py-1 bg-[#F7F4EF] border border-[#E5DEC9] font-semibold">⛺ 2x Camp Area</span>
+              <span class="rounded-full px-3 py-1 bg-[#F7F4EF] border border-[#E5DEC9] font-semibold">🕌 Tempat Ibadah</span>
+              <span class="rounded-full px-3 py-1 bg-[#F7F4EF] border border-[#E5DEC9] font-semibold">🏪 Kantin</span>
+              <span class="rounded-full px-3 py-1 bg-[#F7F4EF] border border-[#E5DEC9] font-semibold">🚻 Toilet</span>
+              <span class="rounded-full px-3 py-1 bg-[#F7F4EF] border border-[#E5DEC9] font-semibold">🌅 Sunset Point</span>
+              <span class="rounded-full px-3 py-1 bg-rose-50 text-rose-800 border border-rose-200 font-semibold">🪸 Area Terumbu Karang</span>
+              <span class="rounded-full px-3 py-1 bg-teal-50 text-teal-800 border border-teal-200 font-semibold">🚤 Area Wahana Air</span>
+            </div>
+            <div class="text-[11px] font-mono text-slate-500">
+              Rute Terhubung: <strong class="text-[#0B1D28]">Merak Mabak Beach ⇄ Pulau Merak Kecil</strong>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- MODUL KATALOG HARGA RESMI (BENTO GRID & FILTER TAB TANPA KALKULATOR) -->
+      <section id="katalog" class="scroll-mt-24 space-y-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h2 class="font-heading font-extrabold text-3xl sm:text-4xl text-[#0B1D28] tracking-tight">
+              Pilihan Paket Wisata & Aktivitas Bahari
+            </h2>
+            <p class="text-slate-600 text-sm sm:text-base mt-1 max-w-2xl">
+              Harga transparan dan terstandar tanpa biaya tersembunyi. Pilih paket di bawah dan klik langsung untuk reservasi slot via WhatsApp resmi.
+            </p>
+          </div>
+
+          <!-- Category Filter Tabs -->
+          <div class="flex flex-wrap items-center gap-1.5 p-1.5 bg-white rounded-2xl border border-[#E5DEC9] shadow-sm">
+            <button class="cat-filter-btn active px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer bg-[#0B1D28] text-white whitespace-nowrap" data-cat="all">
+              Semua Paket
+            </button>
+            <button class="cat-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer text-slate-600 hover:text-[#0B1D28] whitespace-nowrap" data-cat="camping">
+              Camping Ground
+            </button>
+            <button class="cat-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer text-slate-600 hover:text-[#0B1D28] whitespace-nowrap" data-cat="snorkeling-paddle">
+              Snorkeling & Paddle
+            </button>
+            <button class="cat-filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer text-slate-600 hover:text-[#0B1D28] whitespace-nowrap" data-cat="jetski-wahana">
+              Jetski & Wahana
+            </button>
+          </div>
+        </div>
+
+        <!-- Banner Catatan Penting Seksi Camping -->
+        <div id="campingNoticeBanner" class="p-4 sm:p-5 rounded-2xl bg-[#FFF5F2] border border-[#FF6B4A]/30 flex items-start gap-3">
+          <span class="text-xl">⚠️</span>
+          <div class="text-xs sm:text-sm text-[#0B1D28]">
+            <span class="font-bold text-[#FF6B4A]">CATATAN PENTING SEWA TENDA:</span>
+            <span> Paket penyewaan tenda camping belum termasuk biaya penyebrangan kapal nelayan (Rp 15.000 PP) & registrasi tiket pulau. Seluruh peralatan disiapkan rapi oleh kru Anak Pulo di lokasi camping ground.</span>
+          </div>
+        </div>
+
+        <!-- Bento Grid of Packages -->
+        <div id="packageGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          <!-- 1. PAKET MARLIN (CAMPING) -->
+          <div class="package-card bg-white rounded-3xl overflow-hidden border border-[#E5DEC9] shadow-bento flex flex-col justify-between group hover:shadow-bento-hover transition-all duration-300" data-cat="camping">
+            <div>
+              <div class="relative h-56 overflow-hidden">
+                <img src="/assets/aistudio/Camping_2_0c4491bf.jpeg" alt="Paket Marlin Camping Ground Tenda 6 Orang" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div class="absolute top-4 left-4">
+                  <span class="rounded-full px-3 py-1 text-[11px] font-mono font-bold uppercase bg-white/95 text-[#0B1D28] shadow-sm">CAMPING GROUND</span>
+                </div>
+                <div class="absolute bottom-4 right-4">
+                  <span class="rounded-full px-3 py-1 text-xs font-mono font-bold bg-[#0B1D28]/90 text-white backdrop-blur-sm">Kapasitas 6 Orang</span>
+                </div>
+              </div>
+
+              <div class="p-6">
+                <div class="flex items-baseline justify-between mb-2">
+                  <h3 class="font-heading font-extrabold text-2xl text-[#0B1D28]">Paket Marlin</h3>
+                  <div class="font-mono font-extrabold text-2xl text-[#0D9488]">Rp 250.000</div>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Tenda dome ukuran keluarga besar dengan ventilasi maksimal untuk kenyamanan bermalam di tepi pantai.</p>
+
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                  <div class="text-xs font-bold text-slate-700">Fasilitas Lengkap Didapat:</div>
+                  <ul class="text-xs text-slate-600 space-y-1.5 font-medium">
+                    <li class="flex items-center gap-2">✓ <span>Tenda Kapasitas 6 Orang (Double Layer)</span></li>
+                    <li class="flex items-center gap-2">✓ <span>Lampu Portable Camping LED</span></li>
+                    <li class="flex items-center gap-2">✓ <span>Matras Alas Tidur Nyaman</span></li>
+                    <li class="flex items-center gap-2">✓ <span>Akses Dapur Umum & Air Bersih</span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. PAKET PENYU (CAMPING) -->
+          <div class="package-card bg-white rounded-3xl overflow-hidden border border-[#E5DEC9] shadow-bento flex flex-col justify-between group hover:shadow-bento-hover transition-all duration-300" data-cat="camping">
+            <div>
+              <div class="relative h-56 overflow-hidden">
+                <img src="/assets/aistudio/Camping_3_f1e8eb80.jpeg" alt="Paket Penyu Camping Ground Tenda 4 Orang" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div class="absolute top-4 left-4">
+                  <span class="rounded-full px-3 py-1 text-[11px] font-mono font-bold uppercase bg-white/95 text-[#0B1D28] shadow-sm">CAMPING GROUND</span>
+                </div>
+                <div class="absolute bottom-4 right-4">
+                  <span class="rounded-full px-3 py-1 text-xs font-mono font-bold bg-[#0B1D28]/90 text-white backdrop-blur-sm">Kapasitas 4 Orang</span>
+                </div>
+              </div>
+
+              <div class="p-6">
+                <div class="flex items-baseline justify-between mb-2">
+                  <h3 class="font-heading font-extrabold text-2xl text-[#0B1D28]">Paket Penyu</h3>
+                  <div class="font-mono font-extrabold text-2xl text-[#0D9488]">Rp 200.000</div>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Paling favorit untuk circle pertemanan 4 orang. Lokasi camp di bawah naungan pohon rindang pulau.</p>
+
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                  <div class="text-xs font-bold text-slate-700">Fasilitas Lengkap Didapat:</div>
+                  <ul class="text-xs text-slate-600 space-y-1.5 font-medium">
+                    <li class="flex items-center gap-2">✓ <span>Tenda Kapasitas 4 Orang</span></li>
+                    <li class="flex items-center gap-2">✓ <span>Lampu Portable Camping</span></li>
+                    <li class="flex items-center gap-2">✓ <span>Matras Tidur Tebal</span></li>
+                    <li class="flex items-center gap-2">✓ <span>Akses Dapur Umum & Posko</span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. PAKET NEMO (CAMPING) -->
+          <div class="package-card bg-white rounded-3xl overflow-hidden border border-[#E5DEC9] shadow-bento flex flex-col justify-between group hover:shadow-bento-hover transition-all duration-300" data-cat="camping">
+            <div>
+              <div class="relative h-56 overflow-hidden">
+                <img src="/assets/aistudio/Camping_1_8f2d87d3.jpeg" alt="Paket Nemo Camping Ground Tenda 2 Orang" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div class="absolute top-4 left-4">
+                  <span class="rounded-full px-3 py-1 text-[11px] font-mono font-bold uppercase bg-white/95 text-[#0B1D28] shadow-sm">CAMPING GROUND</span>
+                </div>
+                <div class="absolute bottom-4 right-4">
+                  <span class="rounded-full px-3 py-1 text-xs font-mono font-bold bg-[#0B1D28]/90 text-white backdrop-blur-sm">Kapasitas 2 Orang</span>
+                </div>
+              </div>
+
+              <div class="p-6">
+                <div class="flex items-baseline justify-between mb-2">
+                  <h3 class="font-heading font-extrabold text-2xl text-[#0B1D28]">Paket Nemo</h3>
+                  <div class="font-mono font-extrabold text-2xl text-[#0D9488]">Rp 150.000</div>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Pilihan pas bagi pasangan atau solo camper yang ingin menikmati ketenangan malam berbintang Selat Sunda.</p>
+
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                  <div class="text-xs font-bold text-slate-700">Fasilitas Lengkap Didapat:</div>
+                  <ul class="text-xs text-slate-600 space-y-1.5 font-medium">
+                    <li class="flex items-center gap-2">✓ <span>Tenda Kapasitas 2 Orang</span></li>
+                    <li class="flex items-center gap-2">✓ <span>Lampu Portable Camping</span></li>
+                    <li class="flex items-center gap-2">✓ <span>Matras Tidur</span></li>
+                    <li class="flex items-center gap-2">✓ <span>Akses Dapur Umum</span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. SNORKELING ROMBONGAN -->
+          <div class="package-card bg-white rounded-3xl overflow-hidden border border-[#E5DEC9] shadow-bento flex flex-col justify-between group hover:shadow-bento-hover transition-all duration-300" data-cat="snorkeling-paddle">
+            <div>
+              <div class="relative h-56 overflow-hidden">
+                <img src="/assets/aistudio/Snorkeling_2_99001c1b.jpeg" alt="Paket Snorkeling Rombongan 5 Orang" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div class="absolute top-4 left-4">
+                  <span class="rounded-full px-3 py-1 text-[11px] font-mono font-bold uppercase bg-[#0D9488] text-white shadow-sm">BEST VALUE</span>
+                </div>
+                <div class="absolute bottom-4 right-4">
+                  <span class="rounded-full px-3 py-1 text-xs font-mono font-bold bg-[#0B1D28]/90 text-white backdrop-blur-sm">Paket 5 Orang</span>
+                </div>
+              </div>
+
+              <div class="p-6">
+                <div class="flex items-baseline justify-between mb-2">
+                  <h3 class="font-heading font-extrabold text-2xl text-[#0B1D28]">Snorkeling Rombongan</h3>
+                  <div class="font-mono font-extrabold text-2xl text-[#0D9488]">Rp 600.000</div>
+                </div>
+                <div class="text-xs font-mono text-slate-500 mb-4">Total untuk 5 Orang (Rp 120.000 / org)</div>
+
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                  <div class="text-xs font-bold text-slate-700">Fasilitas Lengkap Didapat:</div>
+                  <div class="flex flex-wrap gap-1.5 pt-1">
+                    <span class="rounded-full px-2.5 py-1 bg-teal-50 text-teal-800 text-[11px] font-semibold border border-teal-200">🤿 Alat Snorkel & Pelampung</span>
+                    <span class="rounded-full px-2.5 py-1 bg-teal-50 text-teal-800 text-[11px] font-semibold border border-teal-200">🚤 Kapal ke Spot Karang</span>
+                    <span class="rounded-full px-2.5 py-1 bg-teal-50 text-teal-800 text-[11px] font-semibold border border-teal-200">📷 Dokumentasi Underwater</span>
+                    <span class="rounded-full px-2.5 py-1 bg-teal-50 text-teal-800 text-[11px] font-semibold border border-teal-200">👨‍✈️ Local Guide Bersertifikat</span>
+                    <span class="rounded-full px-2.5 py-1 bg-teal-50 text-teal-800 text-[11px] font-semibold border border-teal-200">🐟 Air Mineral & Pakan Ikan</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. SNORKELING REGULER -->
+          <div class="package-card bg-white rounded-3xl overflow-hidden border border-[#E5DEC9] shadow-bento flex flex-col justify-between group hover:shadow-bento-hover transition-all duration-300" data-cat="snorkeling-paddle">
+            <div>
+              <div class="relative h-56 overflow-hidden">
+                <img src="/assets/aistudio/Snorkeling_1_0f4e6b87.jpeg" alt="Paket Snorkeling Reguler Pulau Merak Kecil" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div class="absolute top-4 left-4">
+                  <span class="rounded-full px-3 py-1 text-[11px] font-mono font-bold uppercase bg-white/95 text-[#0B1D28] shadow-sm">SNORKELING</span>
+                </div>
+                <div class="absolute bottom-4 right-4">
+                  <span class="rounded-full px-3 py-1 text-xs font-mono font-bold bg-[#0B1D28]/90 text-white backdrop-blur-sm">1 — 3 Orang</span>
+                </div>
+              </div>
+
+              <div class="p-6">
+                <div class="flex items-baseline justify-between mb-2">
+                  <h3 class="font-heading font-extrabold text-2xl text-[#0B1D28]">Snorkeling Reguler</h3>
+                  <div class="font-mono font-extrabold text-2xl text-[#0D9488]">Rp 130.000</div>
+                </div>
+                <div class="text-xs font-mono text-slate-500 mb-4">Per Orang (Untuk 1–3 Orang)</div>
+
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                  <div class="text-xs font-bold text-slate-700">Fasilitas Lengkap Didapat:</div>
+                  <div class="flex flex-wrap gap-1.5 pt-1">
+                    <span class="rounded-full px-2.5 py-1 bg-teal-50 text-teal-800 text-[11px] font-semibold border border-teal-200">🤿 Alat Snorkel & Pelampung</span>
+                    <span class="rounded-full px-2.5 py-1 bg-teal-50 text-teal-800 text-[11px] font-semibold border border-teal-200">🚤 Kapal ke Spot Karang</span>
+                    <span class="rounded-full px-2.5 py-1 bg-teal-50 text-teal-800 text-[11px] font-semibold border border-teal-200">📷 Dokumentasi Underwater</span>
+                    <span class="rounded-full px-2.5 py-1 bg-teal-50 text-teal-800 text-[11px] font-semibold border border-teal-200">🐟 Pakan Ikan & Air Mineral</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6. PADDLEBOARD SINGLE (TERMASUK DRONE) -->
+          <div class="package-card bg-white rounded-3xl overflow-hidden border border-[#E5DEC9] shadow-bento flex flex-col justify-between group hover:shadow-bento-hover transition-all duration-300" data-cat="snorkeling-paddle">
+            <div>
+              <div class="relative h-56 overflow-hidden">
+                <img src="/assets/aistudio/Paddle_boat_1_99a641a5.jpeg" alt="Single Paddleboard Pulau Merak Kecil Termasuk Drone" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div class="absolute top-4 left-4">
+                  <span class="rounded-full px-3 py-1 text-[11px] font-mono font-bold uppercase bg-[#FF6B4A] text-white shadow-sm">FREE DRONE</span>
+                </div>
+                <div class="absolute bottom-4 right-4">
+                  <span class="rounded-full px-3 py-1 text-xs font-mono font-bold bg-[#0B1D28]/90 text-white backdrop-blur-sm">1 Paddleboard</span>
+                </div>
+              </div>
+
+              <div class="p-6">
+                <div class="flex items-baseline justify-between mb-2">
+                  <h3 class="font-heading font-extrabold text-2xl text-[#0B1D28]">Single Paddle</h3>
+                  <div class="font-mono font-extrabold text-2xl text-[#0D9488]">Rp 200.000</div>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Rasakan sensasi meluncur di air laut jernih toska dengan hasil rekaman drone aerial sinematik.</p>
+
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                  <div class="text-xs font-bold text-slate-700">Fasilitas Termasuk:</div>
+                  <ul class="text-xs text-slate-600 space-y-1.5 font-medium">
+                    <li class="flex items-center gap-2">✓ <span>1 Unit Stand-Up Paddleboard + Dayung</span></li>
+                    <li class="flex items-center gap-2">✓ <span>Life Jacket / Rompi Pelampung Standard</span></li>
+                    <li class="flex items-center gap-2">✓ <span class="font-bold text-[#FF6B4A]">Dokumentasi Drone Resolusi 4K (Foto & Video)</span></li>
+                    <li class="flex items-center gap-2">✓ <span>Briefing & Pengawasan Kru Safety</span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 7. PADDLEBOARD COUPLE & TRIPLE (COMBINED CARD) -->
+          <div class="package-card bg-white rounded-3xl overflow-hidden border border-[#E5DEC9] shadow-bento flex flex-col justify-between group hover:shadow-bento-hover transition-all duration-300" data-cat="snorkeling-paddle">
+            <div>
+              <div class="relative h-56 overflow-hidden">
+                <img src="/assets/aistudio/Paddle_boat_2_45922c43.jpeg" alt="Couple & Triple Paddle Board dengan Drone" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div class="absolute top-4 left-4">
+                  <span class="rounded-full px-3 py-1 text-[11px] font-mono font-bold uppercase bg-[#FF6B4A] text-white shadow-sm">FREE DRONE</span>
+                </div>
+                <div class="absolute bottom-4 right-4">
+                  <span class="rounded-full px-3 py-1 text-xs font-mono font-bold bg-[#0B1D28]/90 text-white backdrop-blur-sm">2 — 3 Boards</span>
+                </div>
+              </div>
+
+              <div class="p-6">
+                <h3 class="font-heading font-extrabold text-2xl text-[#0B1D28] mb-1">Couple & Triple Paddle</h3>
+                <p class="text-xs text-slate-500 mb-3">Paket seru bareng pasangan atau sahabat lengkap dengan dokumentasi drone atas laut.</p>
+
+                <div class="grid grid-cols-2 gap-2 mb-4 font-mono">
+                  <div class="p-2.5 rounded-xl bg-[#F7F4EF] border border-[#E5DEC9]">
+                    <div class="text-[10px] text-slate-500 font-sans">COUPLE (2 BOARDS)</div>
+                    <div class="font-bold text-[#0D9488] text-lg">Rp 300.000</div>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-[#F7F4EF] border border-[#E5DEC9]">
+                    <div class="text-[10px] text-slate-500 font-sans">TRIPLE (3 BOARDS)</div>
+                    <div class="font-bold text-[#0D9488] text-lg">Rp 400.000</div>
+                  </div>
+                </div>
+
+                <div class="space-y-1.5 pt-2 border-t border-slate-100 text-xs text-slate-600 font-medium">
+                  <div class="flex items-center gap-2">✓ <span>2 atau 3 Unit Paddleboard & Dayung</span></div>
+                  <div class="flex items-center gap-2">✓ <span class="font-bold text-[#FF6B4A]">Dokumentasi Drone Full Group Aerial</span></div>
+                  <div class="flex items-center gap-2">✓ <span>Pelampung & Pengarahan Kru Anak Pulo</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 8. JETSKI SECTION (15 MENIT) -->
+          <div class="package-card bg-white rounded-3xl overflow-hidden border border-[#E5DEC9] shadow-bento flex flex-col justify-between group hover:shadow-bento-hover transition-all duration-300" data-cat="jetski-wahana">
+            <div>
+              <div class="relative h-56 overflow-hidden">
+                <img src="/assets/aistudio/Jetski2_bb3d786b.jpeg" alt="Jetski Pulau Merak Kecil" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div class="absolute top-4 left-4">
+                  <span class="rounded-full px-3 py-1 text-[11px] font-mono font-bold uppercase bg-[#0B1D28] text-white shadow-sm">ADRENALINE</span>
+                </div>
+                <div class="absolute bottom-4 right-4">
+                  <span class="rounded-full px-3 py-1 text-xs font-mono font-bold bg-[#FF6B4A] text-white">Durasi 15 Menit</span>
+                </div>
+              </div>
+
+              <div class="p-6">
+                <h3 class="font-heading font-extrabold text-2xl text-[#0B1D28] mb-1">Jetski Safari</h3>
+                <p class="text-xs text-slate-500 mb-3">Pacu adrenalin membelah ombak Selat Sunda dengan pemandangan gugusan pulau Merak.</p>
+
+                <div class="space-y-2 mb-4 font-mono">
+                  <div class="p-2.5 rounded-xl bg-[#F7F4EF] border border-[#E5DEC9] flex items-center justify-between">
+                    <div>
+                      <div class="text-xs font-sans font-bold text-[#0B1D28]">Jetski Only</div>
+                      <div class="text-[10px] font-sans text-slate-400">Durasi 15 Menit</div>
+                    </div>
+                    <div class="text-lg font-bold text-[#0D9488]">Rp 300.000</div>
+                  </div>
+                  <div class="p-2.5 rounded-xl bg-[#F7F4EF] border border-[#E5DEC9] flex items-center justify-between">
+                    <div>
+                      <div class="text-xs font-sans font-bold text-[#0B1D28]">Jetski + Dokumentasi Drone</div>
+                      <div class="text-[10px] font-sans text-[#FF6B4A] font-semibold">Durasi 15 Menit + Video Drone</div>
+                    </div>
+                    <div class="text-lg font-bold text-[#FF6B4A]">Rp 500.000</div>
+                  </div>
+                </div>
+
+                <div class="space-y-1 pt-1 border-t border-slate-100 text-xs text-slate-600">
+                  <div class="flex items-center gap-2">✓ <span>Didampingi instruktur ahli berpengalaman</span></div>
+                  <div class="flex items-center gap-2">✓ <span>Rompi pelampung standar keselamatan bahari</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 9. WAHANA AIR / WATERSPORTS (SPEED, BANANA, DONAT, ROLLING BOAT) -->
+          <div class="package-card bg-white rounded-3xl overflow-hidden border border-[#E5DEC9] shadow-bento flex flex-col justify-between group hover:shadow-bento-hover transition-all duration-300 md:col-span-2 lg:col-span-1" data-cat="jetski-wahana">
+            <div>
+              <div class="p-6">
+                <span class="rounded-full px-3 py-1 text-[11px] font-mono font-bold uppercase bg-[#F7F4EF] text-[#0B1D28] border border-[#E5DEC9]">
+                  WATERSPORTS
+                </span>
+                <h3 class="font-heading font-extrabold text-2xl text-[#0B1D28] mt-2 mb-1">Wahana Air Grup</h3>
+                <p class="text-xs text-slate-500 mb-4">Serunya terombang-ambing di atas wahana tiup berkecepatan tinggi ditarik perahu motor.</p>
+
+                <!-- List of Watersports -->
+                <div class="space-y-2.5 font-mono">
+                  
+                  <div class="p-3 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] flex items-center justify-between">
+                    <div>
+                      <div class="text-xs font-sans font-bold text-[#0B1D28]">Speed Boat</div>
+                      <div class="text-[10px] font-sans text-slate-500">Kuota: Min 4, Max 8 Orang</div>
+                    </div>
+                    <div class="text-base font-bold text-[#0D9488]">Rp 50.000 <span class="text-[11px] font-normal text-slate-400">/org</span></div>
+                  </div>
+
+                  <div class="p-3 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] flex items-center justify-between">
+                    <div>
+                      <div class="text-xs font-sans font-bold text-[#0B1D28]">Banana Boat</div>
+                      <div class="text-[10px] font-sans text-slate-500">Kuota: Min 4, Max 8 Orang</div>
+                    </div>
+                    <div class="text-base font-bold text-[#0D9488]">Rp 30.000 <span class="text-[11px] font-normal text-slate-400">/org</span></div>
+                  </div>
+
+                  <div class="p-3 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] flex items-center justify-between">
+                    <div>
+                      <div class="text-xs font-sans font-bold text-[#0B1D28]">Donat Boat</div>
+                      <div class="text-[10px] font-sans text-slate-500">Kuota: Min 4, Max 5 Orang</div>
+                    </div>
+                    <div class="text-base font-bold text-[#0D9488]">Rp 30.000 <span class="text-[11px] font-normal text-slate-400">/org</span></div>
+                  </div>
+
+                  <div class="p-3 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] flex items-center justify-between">
+                    <div>
+                      <div class="text-xs font-sans font-bold text-[#0B1D28]">Rolling Boat</div>
+                      <div class="text-[10px] font-sans text-slate-500">Kuota: Min 4, Max 6 Orang</div>
+                    </div>
+                    <div class="text-base font-bold text-[#0D9488]">Rp 30.000 <span class="text-[11px] font-normal text-slate-400">/org</span></div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- BENTO CARD ALAT SEWA TAMBAHAN (ADD-ONS) -->
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-[#E5DEC9] shadow-bento">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <span class="rounded-full px-3 py-1 text-[11px] font-mono font-bold uppercase bg-[#F7F4EF] text-[#0B1D28] border border-[#E5DEC9]">
+                ADD-ONS & PERALATAN SEWA
+              </span>
+              <h3 class="font-heading font-extrabold text-2xl text-[#0B1D28] mt-2">
+                Peralatan Ekstra Camping Ground
+              </h3>
+              <p class="text-slate-500 text-xs sm:text-sm mt-0.5">Dapat disewa langsung di Posko Pulau Merak Kecil saat kedatangan.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 font-mono">
+            
+            <div class="p-4 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] flex flex-col justify-between">
+              <div class="text-2xl mb-2">🌴</div>
+              <div>
+                <div class="font-sans font-bold text-sm text-[#0B1D28]">Hammock</div>
+                <div class="text-[11px] font-sans text-slate-500">Ayunan santai di pepohonan</div>
+              </div>
+              <div class="text-lg font-bold text-[#0D9488] mt-3">Rp 20.000</div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] flex flex-col justify-between">
+              <div class="text-2xl mb-2">💡</div>
+              <div>
+                <div class="font-sans font-bold text-sm text-[#0B1D28]">Lampu Tambahan</div>
+                <div class="text-[11px] font-sans text-slate-500">Lampu gantung LED terang</div>
+              </div>
+              <div class="text-lg font-bold text-[#0D9488] mt-3">Rp 20.000</div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] flex flex-col justify-between">
+              <div class="text-2xl mb-2">🧺</div>
+              <div>
+                <div class="font-sans font-bold text-sm text-[#0B1D28]">Tikar</div>
+                <div class="text-[11px] font-sans text-slate-500">Alas duduk santai luar tenda</div>
+              </div>
+              <div class="text-lg font-bold text-[#0D9488] mt-3">Rp 20.000</div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] flex flex-col justify-between">
+              <div class="text-2xl mb-2">⛺</div>
+              <div>
+                <div class="font-sans font-bold text-sm text-[#0B1D28]">Flysheet</div>
+                <div class="text-[11px] font-sans text-slate-500">Pelindung hujan / kanopi</div>
+              </div>
+              <div class="text-lg font-bold text-[#0D9488] mt-3">Rp 20.000</div>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+      <!-- MODUL EDUKASI KESELAMATAN & P3K BULU BABI SECTION -->
+      <section id="edukasi" class="scroll-mt-24 space-y-6">
+        
+        <div>
+          <h2 class="font-heading font-extrabold text-3xl sm:text-4xl text-[#0B1D28] tracking-tight">
+            Edukasi Penanganan Medis P3K & Etika Wisata
+          </h2>
+          <p class="text-slate-600 text-sm sm:text-base mt-1 max-w-2xl">
+            Keselamatan Anda adalah prioritas nomor satu. Pahami langkah pertolongan pertama dan aturan menjaga kelestarian terumbu karang sebelum beraktivitas.
+          </p>
+        </div>
+
+        <!-- 2 HIGH CONTRAST BENTO CARDS -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- KARTU 1: PANDUAN DARURAT P3K BULU BABI & KARANG TAJAM (COL-SPAN 7) -->
+          <div class="lg:col-span-7 bg-[#0B1D28] text-white rounded-3xl p-6 sm:p-8 border-2 border-[#E11D48]/30 shadow-bento space-y-6 relative overflow-hidden">
+            <div class="absolute -right-16 -top-16 w-64 h-64 bg-[#E11D48]/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="flex items-center justify-between border-b border-white/10 pb-4">
+              <div class="flex items-center gap-2.5">
+                <span class="text-2xl">🩹</span>
+                <div>
+                  <h3 class="font-heading font-extrabold text-xl text-white">Panduan Darurat P3K: Tertusuk Bulu Babi & Karang</h3>
+                  <span class="text-xs font-mono text-[#FF8A6F]">Spesies: Diadema setosum (Bulu Babi Karang Hitam)</span>
+                </div>
+              </div>
+              <span class="rounded-full px-3 py-1 text-[11px] font-mono font-bold bg-[#E11D48] text-white uppercase shrink-0">DARURAT P3K</span>
+            </div>
+
+            <!-- Steps list -->
+            <div class="space-y-4">
+              
+              <div class="flex items-start gap-3.5 p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                <div class="w-7 h-7 rounded-full bg-[#E11D48] text-white font-mono font-bold text-xs flex items-center justify-center shrink-0">1</div>
+                <div>
+                  <div class="font-bold text-sm text-white">JANGAN DIPICIK / DITEKAN / DIPIJAT</div>
+                  <div class="text-xs text-white/75 mt-0.5 leading-relaxed">
+                    Duri bulu babi terbuat dari kalsium karbonat yang sangat rapuh. Memijat atau memukul luka hanya akan membuat duri hancur dan patah berkeping-keping di dalam jaringan otot.
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3.5 p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                <div class="w-7 h-7 rounded-full bg-[#FF6B4A] text-white font-mono font-bold text-xs flex items-center justify-center shrink-0">2</div>
+                <div>
+                  <div class="font-bold text-sm text-white">RENDAM AIR HANGAT (SUHU 40°C — 45°C)</div>
+                  <div class="text-xs text-white/75 mt-0.5 leading-relaxed">
+                    Rendam bagian yang tertusuk selama 30 hingga 60 menit. Racun protein pada duri bersifat tidak tahan panas (<em>heat-labile</em>) sehingga perendaman air hangat akan meredakan nyeri secara drastis.
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3.5 p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                <div class="w-7 h-7 rounded-full bg-[#14B8A6] text-white font-mono font-bold text-xs flex items-center justify-center shrink-0">3</div>
+                <div>
+                  <div class="font-bold text-sm text-white">KOMPRES DENGAN ASAM LEMAH (CUKA / JERUK NIPIS)</div>
+                  <div class="text-xs text-white/75 mt-0.5 leading-relaxed">
+                    Sifat asam ringan membantu melarutkan sisa kalsium duri mikro yang tertinggal dan mencegah infeksi bakteri laut.
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3.5 p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                <div class="w-7 h-7 rounded-full bg-emerald-500 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0">4</div>
+                <div>
+                  <div class="font-bold text-sm text-white">CABUT DURI BESAR & SEGERA KE POSKO ANAK PULO</div>
+                  <div class="text-xs text-white/75 mt-0.5 leading-relaxed">
+                    Cabut perlahan duri yang mencuat dengan pinset steril. Jangan cungkil luka. Segera menuju <span class="text-white font-semibold underline">Posko Medis Anak Pulo</span> untuk antiseptik dan perawatan lebih lanjut.
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- KARTU 2: ATURAN & ETIKA WISATAWAN (COL-SPAN 5) -->
+          <div class="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-[#E5DEC9] shadow-bento space-y-6 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center gap-2.5 border-b border-[#E5DEC9] pb-4">
+                <span class="text-2xl">🌱</span>
+                <div>
+                  <h3 class="font-heading font-extrabold text-xl text-[#0B1D28]">Aturan & Etika Konservasi</h3>
+                  <span class="text-xs font-mono text-slate-500">Pedoman Pelestarian Ekosistem</span>
+                </div>
+              </div>
+
+              <div class="mt-4 space-y-3.5 text-xs text-slate-700">
+                
+                <div class="p-3.5 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] space-y-1">
+                  <div class="font-bold text-[#0B1D28] flex items-center gap-1.5">
+                    <span>🚯</span> 1. Bebas Sampah Plastik (Zero Waste)
+                  </div>
+                  <p class="text-slate-600 leading-normal">
+                    Wajib membawa kantong sampah sendiri dan membawa pulang seluruh sampah kembali ke daratan utama Mabak. Dilarang meninggalkan puntung rokok di pasir pantai.
+                  </p>
+                </div>
+
+                <div class="p-3.5 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] space-y-1">
+                  <div class="font-bold text-[#0B1D28] flex items-center gap-1.5">
+                    <span>🪸</span> 2. Dilarang Menginjak Terumbu Karang Hidup
+                  </div>
+                  <p class="text-slate-600 leading-normal">
+                    Gunakan sepatu pelindung pantai (<em>water shoes</em>) dan berenang mengapung. Karang membutuhkan waktu puluhan tahun untuk tumbuh beberapa centimeter.
+                  </p>
+                </div>
+
+                <div class="p-3.5 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] space-y-1">
+                  <div class="font-bold text-[#0B1D28] flex items-center gap-1.5">
+                    <span>🚩</span> 3. Patuhi Batas Bendera & Zonasi
+                  </div>
+                  <p class="text-slate-600 leading-normal">
+                    Hanya berenang di Zona Aman (Pantai Timur). Jangan melintasi batas bendera merah di sisi barat karena arus bawah laut Selat Sunda sangat kuat.
+                  </p>
+                </div>
+
+                <div class="p-3.5 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] space-y-1">
+                  <div class="font-bold text-[#0B1D28] flex items-center gap-1.5">
+                    <span>🦺</span> 4. Wajib Life Jacket Saat Beraktivitas
+                  </div>
+                  <p class="text-slate-600 leading-normal">
+                    Penggunaan rompi pelampung adalah kewajiban mutlak selama bermain paddleboard, snorkeling, maupun wahana air.
+                  </p>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-teal-50 border border-teal-200 text-teal-900 text-xs font-medium">
+              💚 Mari rawat keindahan Pulau Merak Kecil bersama Komunitas Anak Pulo agar generasi mendatang dapat menikmatinya.
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- GALERI BENTO KOMUNITAS & FAKTA PULAU -->
+      <section class="space-y-6">
+        <div>
+          <h2 class="font-heading font-extrabold text-3xl sm:text-4xl text-[#0B1D28] tracking-tight">
+            Momen & Pesona Pulau Merak Kecil
+          </h2>
+          <p class="text-slate-600 text-sm sm:text-base mt-1 max-w-2xl">
+            Kumpulan potret nyata aktivitas para wisatawan dan camper yang diabadikan langsung oleh pemandu Komunitas Anak Pulo.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="rounded-3xl overflow-hidden aspect-[3/4] border border-[#E5DEC9] group relative">
+            <img src="/assets/aistudio/Paddle_boat_3_97cb338a.jpeg" alt="Drone Grid Paddle Boarding" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
+              <span class="text-xs font-mono text-white font-bold">Drone Shots Aerial</span>
+            </div>
+          </div>
+          <div class="rounded-3xl overflow-hidden aspect-[3/4] border border-[#E5DEC9] group relative">
+            <img src="/assets/aistudio/Paddle_Boat_4_ddb257a1.jpeg" alt="Paddle Board Cantik Merak Kecil" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
+              <span class="text-xs font-mono text-white font-bold">Turquoise Lagoon</span>
+            </div>
+          </div>
+          <div class="rounded-3xl overflow-hidden aspect-[3/4] border border-[#E5DEC9] group relative">
+            <img src="/assets/aistudio/Camping_1_8f2d87d3.jpeg" alt="Pintu Masuk Camping Ground Selat Sunda" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
+              <span class="text-xs font-mono text-white font-bold">Iconic Surfboard Gate</span>
+            </div>
+          </div>
+          <div class="rounded-3xl overflow-hidden aspect-[3/4] border border-[#E5DEC9] group relative">
+            <img src="/assets/aistudio/Snorkeling_2_99001c1b.jpeg" alt="Formasi Melingkar Snorkeling" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
+              <span class="text-xs font-mono text-white font-bold">Circle Snorkel Formation</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- INFO AKSES & POSKO TERPADU SECTION -->
+      <section id="posko" class="scroll-mt-24 bg-white rounded-3xl p-6 sm:p-10 border border-[#E5DEC9] shadow-bento space-y-8">
+        
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#E5DEC9] pb-6">
+          <div>
+            <h2 class="font-heading font-extrabold text-3xl text-[#0B1D28] tracking-tight">
+              Cara Menuju Pulau Merak Kecil
+            </h2>
+            <p class="text-slate-600 text-sm mt-1">
+              Hanya 5–10 menit penyebrangan perahu dari Dermaga Pantai Mabak, Cilegon, Banten.
+            </p>
+          </div>
+          <div class="text-xs font-mono text-slate-500">
+            Jarak dari Jakarta: ~95 km via Tol Tangerang-Merak
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-700">
+          
+          <div class="p-5 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] space-y-2">
+            <div class="font-mono text-slate-400 font-bold">LANGKAH 1</div>
+            <div class="font-heading font-bold text-base text-[#0B1D28]">Tiba di Pantai Mabak</div>
+            <p class="leading-relaxed">
+              Jika naik KRL/Kereta Lokal: Turun di <span class="font-semibold">Stasiun Merak</span>, lalu naik angkot/ojek online 5 menit ke Pantai Mabak. Jika berkendara pribadi: Keluar Gerbang Tol Merak, arahkan peta ke "Pantai Mabak Cilegon".
+            </p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] space-y-2">
+            <div class="font-mono text-slate-400 font-bold">LANGKAH 2</div>
+            <div class="font-heading font-bold text-base text-[#0B1D28]">Penyebrangan Kapal & Kontribusi Kebersihan</div>
+            <p class="leading-relaxed">
+              Tidak ada biaya tiket masuk pulau. Wisatawan cukup membayar penyebrangan kapal nelayan PP (<span class="font-semibold text-[#0B1D28]">Rp 15.000/orang</span>) serta kontribusi kebersihan pulau (<span class="font-semibold text-[#0B1D28]">Rp 2.000/orang</span> atau membawa kantong sampah sendiri). Parkir mobil & motor 24 jam tersedia aman di Mabak.
+            </p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-[#F7F4EF] border border-[#E5DEC9] space-y-2">
+            <div class="font-mono text-slate-400 font-bold">LANGKAH 3</div>
+            <div class="font-heading font-bold text-base text-[#0B1D28]">Penyebrangan Menyenangkan</div>
+            <p class="leading-relaxed">
+              Naik perahu motor nelayan khas Selat Sunda selama 5–10 menit melintasi air laut toska jernih. Mendarat di Dermaga Kayu Pulau Merak Kecil dan langsung disambut kru Posko Anak Pulo!
+            </p>
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- FOOTER (EDITORIAL MINIMALIST STYLE) -->
+    <footer class="bg-[#0B1D28] text-white pt-16 pb-12 border-t border-white/10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 space-y-12">
+        
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+          
+          <div class="md:col-span-6 space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full bg-white p-0.5 shadow-md overflow-hidden flex items-center justify-center shrink-0 border border-white/20">
+                <img src="/assets/aistudio/image_8e491d81.png" alt="Logo Resmi PULO-MAPS Pulau Merak Kecil" class="w-full h-full object-contain scale-110" />
+              </div>
+              <div>
+                <span class="font-heading font-extrabold text-2xl tracking-tight text-white block leading-none">PULO-MAPS</span>
+                <span class="font-mono text-[10px] text-[#14B8A6] uppercase tracking-widest">Pulau Merak Kecil • Cilegon</span>
+              </div>
+            </div>
+            <p class="text-white/70 text-sm max-w-md leading-relaxed font-body">
+              Platform resmi informasi pariwisata, sistem peta spasial keselamatan (WebGIS), dan transparansi tarif terkelola di Pulau Merak Kecil oleh Komunitas Anak Pulo, Kelurahan Mekarsari, Kecamatan Pulomerak, Kota Cilegon, Banten.
+            </p>
+            <div class="font-mono text-xs text-white/50">
+              Koordinat Geografis: 5°56'21.1"S 105°59'53.5"E
+            </div>
+          </div>
+
+          <div class="md:col-span-3 space-y-3 font-mono text-xs">
+            <div class="font-bold text-[#FF6B4A] uppercase tracking-wider">NAVIGASI CEPAT</div>
+            <ul class="space-y-2 text-white/70">
+              <li><a href="#tiket" class="hover:text-white transition-colors">Tiket Masuk & Akses</a></li>
+              <li><a href="#webgis" class="hover:text-white transition-colors">Peta WebGIS & Zonasi</a></li>
+              <li><a href="#katalog" class="hover:text-white transition-colors">Katalog Paket Camping</a></li>
+              <li><a href="#edukasi" class="hover:text-white transition-colors">Panduan P3K Bulu Babi</a></li>
+            </ul>
+          </div>
+
+          <div class="md:col-span-3 space-y-3 font-mono text-xs">
+            <div class="font-bold text-[#14B8A6] uppercase tracking-wider">KONTAK POSKO PUSAT</div>
+            <ul class="space-y-2 text-white/70 font-sans">
+              <li>📞 WhatsApp: +62 817-6789-420</li>
+              <li>📍 Sekretariat: Pesisir Pantai Mabak, Merak</li>
+              <li>🕒 Jam Operasional Day-Trip: 07.00 – 17.30 WIB</li>
+              <li>⛺ Camping: 24 Jam (Wajib Reservasi)</li>
+            </ul>
+          </div>
+
+        </div>
+
+        <div class="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-white/50">
+          <div>
+            © 2026 Komunitas Anak Pulo Merak Kecil. All Rights Reserved.
+          </div>
+          <div class="flex items-center gap-4">
+            <a href="https://www.instagram.com/pulaumerakkecil?utm_source=ig_web_button_share_sheet&srtk=ZDNlZDc0MzIxNw=="
+               target="_blank"
+               rel="noopener noreferrer"
+               class="inline-flex items-center gap-1.5 text-white/70 hover:text-[#FF6B4A] transition-colors font-semibold">
+              <svg class="w-4 h-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+              </svg>
+              <span>Instagram @pulaumerakkecil</span>
+            </a>
+            <span class="text-white/20">•</span>
+            <a href="https://www.tiktok.com/@pulaumerakkecil?_r=1&_t=ZS-9B4iNK9CraM"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="inline-flex items-center gap-1.5 text-white/70 hover:text-[#14B8A6] transition-colors font-semibold">
+              <svg class="w-4 h-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path>
+              </svg>
+              <span>TikTok @pulaumerakkecil</span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </footer>
+
+    <!-- INTERACTIVE JAVASCRIPT: WEBGIS LEAFLET, FILTERING, GEOLOCATION & WHATSAPP -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        
+        // --- 1. Mobile Menu Toggle ---
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileBtn && mobileMenu) {
+          mobileBtn.addEventListener('click', function () {
+            mobileMenu.classList.toggle('hidden');
+          });
+          // Close on link click
+          mobileMenu.querySelectorAll('a').forEach(function(link) {
+            link.addEventListener('click', function () {
+              mobileMenu.classList.add('hidden');
+            });
+          });
+        }
+
+        // --- 2. Leaflet WebGIS Initialization ---
+        const pulauCoords = [-5.9392, 105.9982];
+        const map = L.map('islandMap', {
+          center: pulauCoords,
+          zoom: 17,
+          minZoom: 14,
+          maxZoom: 19,
+          zoomControl: false,
+          scrollWheelZoom: true,
+        });
+
+        // Configurable state for 'Posko' breathing-pin marker animation
+        const islandMapEl = document.getElementById('islandMap');
+        let isPoskoAnimationEnabled = true;
+        if (islandMapEl) {
+          islandMapEl.setAttribute('data-posko-animation', 'animated');
+        }
+
+        // Custom Minimalist Corner Zoom & Marker Settings Control integrated inside #islandMap
+        const CustomZoomControl = L.Control.extend({
+          options: {
+            position: 'topright'
+          },
+          onAdd: function (leafletMap) {
+            const wrapper = L.DomUtil.create(
+              'div',
+              'custom-island-controls pointer-events-auto flex items-start gap-2 !m-3'
+            );
+
+            wrapper.innerHTML = `
+              <!-- Compact Floating Settings Popover / Status Pill for Posko Marker Animation -->
+              <div id="poskoAnimSettingsPopover" class="bg-white/95 backdrop-blur-md rounded-2xl px-3 py-2 border border-[#E5DEC9] shadow-xl flex items-center gap-2.5 text-xs transition-all duration-200">
+                <div class="flex flex-col">
+                  <span class="font-mono text-[9px] uppercase tracking-wider text-slate-400 font-bold leading-none">Marker Posko</span>
+                  <span id="poskoAnimStatusLabel" class="font-heading font-extrabold text-[11px] text-[#0B1D28] mt-0.5 whitespace-nowrap">Animasi Aktif</span>
+                </div>
+                <button type="button" id="poskoAnimToggleSwitch" role="switch" aria-checked="true" aria-label="Toggle Animasi Marker Posko"
+                  class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-[#FF6B4A] transition-colors duration-200 ease-in-out focus:outline-none">
+                  <span id="poskoAnimToggleKnob" class="pointer-events-none inline-block h-4 w-4 translate-x-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out"></span>
+                </button>
+              </div>
+
+              <!-- Vertical Corner Stack: Zoom Controls + Settings Gear Icon -->
+              <div class="custom-island-zoom bg-white/95 backdrop-blur-md rounded-2xl p-1.5 border border-[#E5DEC9] shadow-xl flex flex-col items-center gap-1">
+                <button type="button" id="customZoomInBtn" title="Perbesar Peta (Zoom In)" aria-label="Perbesar Peta"
+                  class="w-8 h-8 rounded-xl bg-white hover:bg-[#0B1D28] text-[#0B1D28] hover:text-white border border-[#E5DEC9]/80 hover:border-[#0B1D28] transition-all duration-150 flex items-center justify-center cursor-pointer active:scale-95 disabled:opacity-35 disabled:pointer-events-none">
+                  <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                </button>
+                <div id="customZoomLevelBadge" title="Tingkat Zoom Saat Ini"
+                  class="w-8 py-0.5 rounded-lg bg-[#F7F4EF] border border-[#E5DEC9] text-[10px] font-mono font-extrabold text-[#0D9488] text-center select-none">
+                  ${leafletMap.getZoom()}z
+                </div>
+                <button type="button" id="customZoomOutBtn" title="Perkecil Peta (Zoom Out)" aria-label="Perkecil Peta"
+                  class="w-8 h-8 rounded-xl bg-white hover:bg-[#0B1D28] text-[#0B1D28] hover:text-white border border-[#E5DEC9]/80 hover:border-[#0B1D28] transition-all duration-150 flex items-center justify-center cursor-pointer active:scale-95 disabled:opacity-35 disabled:pointer-events-none">
+                  <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+                </button>
+                <div class="w-5 h-px bg-[#E5DEC9] my-0.5"></div>
+                <button type="button" id="customZoomResetBtn" title="Fokus Tengah Pulau (17z)" aria-label="Fokus Tengah Pulau"
+                  class="w-8 h-7 rounded-xl bg-[#F7F4EF] hover:bg-[#0D9488] text-[#0B1D28] hover:text-white transition-all duration-150 flex items-center justify-center cursor-pointer active:scale-95">
+                  <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M2 12h3"/><path d="M19 12h3"/></svg>
+                </button>
+                <div class="w-5 h-px bg-[#E5DEC9] my-0.5"></div>
+                <button type="button" id="islandMapSettingsBtn" title="Pengaturan Animasi Marker Posko (Aktif / Statis)" aria-label="Pengaturan Animasi Marker Posko" aria-pressed="true"
+                  class="relative w-8 h-8 rounded-xl bg-[#0B1D28] text-white hover:bg-[#0D9488] border border-[#0B1D28] transition-all duration-150 flex items-center justify-center cursor-pointer active:scale-95">
+                  <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span id="islandMapSettingsDot" class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#FF6B4A] border-2 border-white"></span>
+                </button>
+              </div>
+            `;
+
+            L.DomEvent.disableClickPropagation(wrapper);
+            L.DomEvent.disableScrollPropagation(wrapper);
+
+            const btnIn = wrapper.querySelector('#customZoomInBtn');
+            const btnOut = wrapper.querySelector('#customZoomOutBtn');
+            const btnReset = wrapper.querySelector('#customZoomResetBtn');
+            const badge = wrapper.querySelector('#customZoomLevelBadge');
+
+            function syncZoomState() {
+              const z = leafletMap.getZoom();
+              if (badge) badge.textContent = `${z}z`;
+              if (btnIn) btnIn.disabled = z >= leafletMap.getMaxZoom();
+              if (btnOut) btnOut.disabled = z <= leafletMap.getMinZoom();
+            }
+
+            btnIn.addEventListener('click', () => leafletMap.zoomIn());
+            btnOut.addEventListener('click', () => leafletMap.zoomOut());
+            btnReset.addEventListener('click', () => leafletMap.flyTo(pulauCoords, 17, { duration: 0.9 }));
+
+            leafletMap.on('zoomend', syncZoomState);
+            syncZoomState();
+
+            return wrapper;
+          }
+        });
+
+        map.addControl(new CustomZoomControl());
+
+        // Basemap tile layers
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+          maxZoom: 19
+        });
+
+        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 19
+        });
+
+        // Default to high-res Satellite Imagery for coastal island beauty
+        satelliteLayer.addTo(map);
+        let currentBasemap = 'satellite';
+
+        // Toggle Basemap button
+        const btnToggleBasemap = document.getElementById('btnToggleBasemap');
+        if (btnToggleBasemap) {
+          btnToggleBasemap.addEventListener('click', function () {
+            if (currentBasemap === 'satellite') {
+              map.removeLayer(satelliteLayer);
+              streetLayer.addTo(map);
+              currentBasemap = 'street';
+              btnToggleBasemap.innerHTML = '<span>🛰️ Mode Satelit HD</span>';
+            } else {
+              map.removeLayer(streetLayer);
+              satelliteLayer.addTo(map);
+              currentBasemap = 'satellite';
+              btnToggleBasemap.innerHTML = '<span>🗺️ Mode Peta Jalan</span>';
+            }
+          });
+        }
+
+        // Focus Island button
+        const btnResetMap = document.getElementById('btnResetMap');
+        if (btnResetMap) {
+          btnResetMap.addEventListener('click', function () {
+            map.flyTo(pulauCoords, 17, { duration: 1.2 });
+          });
+        }
+
+        // --- 3. Safety Zones Polygons Data ---
+        const zonesData = {
+          safe: {
+            title: "Zona Aman Berenang & Snorkeling Pemula",
+            category: "Pantai Timur (Pasir Putih)",
+            color: "#10B981",
+            coords: [
+              [-5.9378, 105.9986],
+              [-5.9376, 105.9994],
+              [-5.9392, 105.9997],
+              [-5.9404, 105.9991],
+              [-5.9398, 105.9984]
+            ],
+            desc: "Area perairan pantai timur dengan dasar pasir putih lembut, ombak sangat tenang karena terlindung dari gelombang Selat Sunda. Diawasi langsung oleh kru Life Guard Posko Anak Pulo. Sangat aman untuk berenang anak-anak dan keluarga.",
+            rules: [
+              "Kedalaman rata-rata: 0.5 - 1.8 meter",
+              "Dasar perairan pasir bersih tanpa karang tajam",
+              "Disarankan menggunakan pelampung untuk anak-anak",
+              "Batas aman renang hingga radius 30 meter dari bibir pantai"
+            ]
+          },
+          danger: {
+            title: "Zona Rawan Bulu Babi & Karang Tajam",
+            category: "Gugusan Karang Barat & Arus Selat Sunda",
+            color: "#E11D48",
+            coords: [
+              [-5.9372, 105.9968],
+              [-5.9370, 105.9982],
+              [-5.9380, 105.9976],
+              [-5.9396, 105.9966],
+              [-5.9406, 105.9968],
+              [-5.9398, 105.9958]
+            ],
+            desc: "PERINGATAN BAHAYA: Area terumbu karang dangkal sisi barat langsung berhadapan dengan perairan terbuka Selat Sunda. Terdapat koloni lebat bulu babi hitam berduri panjang (Diadema setosum) serta arus bawah laut yang dapat menarik perenang ke arah palung.",
+            rules: [
+              "DILARANG berenang tanpa sepatu pantai (water shoes)",
+              "DILARANG berenang sendirian tanpa pemandu lokal",
+              "Waspada pasang surut: karang tajam menyembul saat surut",
+              "Jika tersengat, segera lakukan pertolongan P3K dan ke Posko"
+            ]
+          },
+          camping: {
+            title: "Zona Area Camping Ground Resmi",
+            category: "Plateau & Punggung Bukit Teduh",
+            color: "#F59E0B",
+            coords: [
+              [-5.9386, 105.9975],
+              [-5.9383, 105.9983],
+              [-5.9399, 105.9984],
+              [-5.9401, 105.9974]
+            ],
+            desc: "Kawasan perkemahan terawat di bawah naungan pohon ketapang dan cemara laut rindang. Dilengkapi spot api unggun komunal, akses toilet/kamar bilas, serta dekat dengan Posko Terpadu Anak Pulo.",
+            rules: [
+              "Kapasitas ideal: 35-40 tenda per malam",
+              "Dilarang menebang dahan pohon untuk kayu bakar",
+              "Wajib mematikan api unggun sebelum tidur",
+              "Jaga ketenangan setelah pukul 23.00 WIB"
+            ]
+          },
+          conservation: {
+            title: "Zona Konservasi Pohon & Terumbu Karang",
+            category: "Reboisasi & Nursery Karang",
+            color: "#0EA5E9",
+            coords: [
+              [-5.9403, 105.9971],
+              [-5.9402, 105.9988],
+              [-5.9416, 105.9989],
+              [-5.9417, 105.9969]
+            ],
+            desc: "Area pelestarian ekosistem pesisir selatan Pulau Merak Kecil. Tempat pembibitan terumbu karang buatan oleh Komunitas Anak Pulo dan penanaman pohon cemara udang pencegah abrasi.",
+            rules: [
+              "Dilarang mengambil karang, cangkang kerang, atau biota laut",
+              "Dilarang membuang sampah atau sisa makanan",
+              "Aktivitas edukasi lingkungan wajib didampingi kru",
+              "Zona dilindungi secara adat & komunitas nelayan"
+            ]
+          }
+        };
+
+        // Zone layer groups
+        const zoneLayers = {};
+        const drawer = document.getElementById('zoneInfoDrawer');
+        const drawerTitle = document.getElementById('zoneDrawerTitle');
+        const drawerCategory = document.getElementById('zoneDrawerCategory');
+        const drawerDesc = document.getElementById('zoneDrawerDesc');
+        const drawerBadge = document.getElementById('zoneDrawerBadge');
+        const drawerRules = document.getElementById('zoneDrawerRules');
+
+        function openZoneDrawer(key) {
+          const z = zonesData[key];
+          if (!z || !drawer) return;
+          drawerTitle.textContent = z.title;
+          drawerCategory.textContent = z.category;
+          drawerDesc.textContent = z.desc;
+          drawerBadge.style.backgroundColor = z.color;
+          drawerRules.innerHTML = z.rules.map(r => `<div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700">📌 ${r}</div>`).join('');
+          drawer.classList.remove('hidden');
+          drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        const btnCloseZoneDrawer = document.getElementById('btnCloseZoneDrawer');
+        if (btnCloseZoneDrawer) {
+          btnCloseZoneDrawer.addEventListener('click', () => drawer.classList.add('hidden'));
+        }
+
+        // Draw Polygons
+        Object.keys(zonesData).forEach(key => {
+          const z = zonesData[key];
+          const polygon = L.polygon(z.coords, {
+            color: z.color,
+            weight: 2,
+            opacity: 0.9,
+            fillColor: z.color,
+            fillOpacity: 0.28,
+            dashArray: key === 'danger' ? '6, 6' : undefined,
+          }).addTo(map);
+
+          polygon.bindPopup(`
+            <div style="min-width: 180px;">
+              <div style="font-weight: 800; font-size: 13px; color: #0B1D28; font-family: 'Plus Jakarta Sans', sans-serif;">${z.title}</div>
+              <div style="font-size: 11px; color: ${z.color}; font-weight: 700; margin-top: 2px;">${z.category}</div>
+              <button onclick="window.triggerZoneDrawer('${key}')" style="margin-top: 8px; width: 100%; padding: 4px 8px; background: #0B1D28; color: #FFFFFF; font-size: 11px; font-weight: 700; border-radius: 9999px; border: none; cursor: pointer;">
+                Baca Aturan Zona ↗
+              </button>
+            </div>
+          `);
+
+          polygon.on('click', () => openZoneDrawer(key));
+          zoneLayers[key] = polygon;
+        });
+
+        // Global bridge for popup button
+        window.triggerZoneDrawer = function(key) {
+          openZoneDrawer(key);
+        };
+
+        // --- 4. Markers for Facilities & POIs ---
+        const poiMarkers = [];
+        const markerGroup = L.layerGroup().addTo(map);
+
+        function isPoskoFacility(poi) {
+          const catStr = `${poi.category || ''} ${poi.cat || ''}`.toLowerCase();
+          return catStr.includes('posko') || Boolean(poi.isPosko);
+        }
+
+        function createCustomPin(poi, animatePosko = isPoskoAnimationEnabled) {
+          const isPosko = isPoskoFacility(poi);
+          const categoryAttr = isPosko ? 'Posko' : (poi.category || poi.cat || 'Fasilitas');
+
+          if (isPosko) {
+            const badgeText = poi.badgeLabel || 'POSKO TERPADU';
+            const animClasses = animatePosko
+              ? 'breathing-pin posko-breathing-pin'
+              : 'static-pin posko-breathing-pin';
+            return L.divIcon({
+              className: 'custom-poi-marker posko-marker-wrapper',
+              html: `
+                <div data-category="Posko" style="position: relative; display: flex; flex-direction: column; align-items: center;">
+                  <div class="${animClasses}" data-category="Posko" data-animated="${animatePosko}" style="background: ${poi.color}; width: 40px; height: 40px; border-radius: 9999px; border: 2.5px solid #FF6B4A; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                    ${poi.emoji}
+                  </div>
+                  <span style="margin-top: 4px; padding: 2px 7px; border-radius: 9999px; background: #0B1D28; color: #FFFFFF; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; border: 1.5px solid #FF6B4A; box-shadow: 0 2px 8px rgba(0,0,0,0.35);">
+                    ${badgeText}
+                  </span>
+                </div>
+              `,
+              iconSize: [40, 58],
+              iconAnchor: [20, 20],
+              popupAnchor: [0, -20]
+            });
+          }
+          return L.divIcon({
+            className: 'custom-poi-marker',
+            html: `
+              <div data-category="${categoryAttr}" style="background: ${poi.color}; width: 34px; height: 34px; border-radius: 9999px; border: 2.5px solid #FFFFFF; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                ${poi.emoji}
+              </div>
+            `,
+            iconSize: [34, 34],
+            iconAnchor: [17, 17],
+            popupAnchor: [0, -17]
+          });
+        }
+
+        const pois = [
+          {
+            name: "Dermaga Kedatangan Nelayan Mabak",
+            cat: "Dermaga Penyebrangan",
+            category: "Dermaga",
+            coords: [-5.9380, 105.9992],
+            emoji: "🚤",
+            color: "#0D9488",
+            desc: "Titik bersandar kapal motor nelayan yang menyebrang dari Pantai Mabak. Kedalaman aman dan dermaga kayu ramah wisatawan."
+          },
+          {
+            name: "Posko Terpadu Komunitas Anak Pulo",
+            cat: "Posko",
+            subCat: "Pusat Informasi & Medis P3K",
+            category: "Posko",
+            badgeLabel: "POSKO TERPADU",
+            coords: [-5.9388, 105.9985],
+            emoji: "🏕️",
+            color: "#0B1D28",
+            isPosko: true,
+            desc: "Pusat koordinasi keselamatan, penitipan barang, kotak obat darurat P3K bulu babi, dan tempat bertanya seputar pulau."
+          },
+          {
+            name: "Posko Kebersihan & Zero Waste",
+            cat: "Posko",
+            subCat: "Posko Kebersihan & Kantong Sampah",
+            category: "Posko",
+            badgeLabel: "POSKO KEBERSIHAN",
+            coords: [-5.9384, 105.9997],
+            emoji: "♻️",
+            color: "#0B1D28",
+            isPosko: true,
+            desc: "Titik kontribusi kebersihan pulau (Rp 2.000/orang), pengambilan kantong sampah ramah lingkungan, dan pengumpulan sampah terpilah sebelum kembali ke daratan."
+          },
+          {
+            name: "Posko Pantau Keselamatan & Lifeguard",
+            cat: "Posko",
+            subCat: "Posko Pengawas Arus & Angin Barat",
+            category: "Posko",
+            badgeLabel: "POSKO PANTAU",
+            coords: [-5.9396, 105.9973],
+            emoji: "🛟",
+            color: "#0B1D28",
+            isPosko: true,
+            desc: "Pos pengawasan keselamatan perairan barat, pemantauan bendera peringatan gelombang, serta kesiapsiagaan pertolongan pertama wisata bahari."
+          },
+          {
+            name: "Gerbang Camping Ground & Tenda",
+            cat: "Area Berkemah",
+            category: "Camping",
+            coords: [-5.9388, 105.9976],
+            emoji: "⛺",
+            color: "#F59E0B",
+            desc: "Pintu masuk iconic surfboard 'Camping Ground Pulau Merak Kecil - Everyday is Holiday'. Area mendirikan tenda teduh berangin sepoi."
+          },
+          {
+            name: "Spot Snorkeling Karang & Ikan Hias",
+            cat: "Wahana Bawah Laut",
+            category: "Wahana",
+            coords: [-5.9375, 105.9986],
+            emoji: "🤿",
+            color: "#0EA5E9",
+            desc: "Taman terumbu karang dangkal dengan kawanan ikan nemo & sersan mayor. Spot foto underwater terbaik bersama local guide."
+          },
+          {
+            name: "Fasilitas Toilet & Mushola Pesisir",
+            cat: "Fasilitas Umum",
+            category: "Fasilitas",
+            coords: [-5.9394, 105.9985],
+            emoji: "🚻",
+            color: "#64748B",
+            desc: "Toilet bilas air tawar dan mushola kayu bersih yang dirawat berkala oleh tim posko kebersihan."
+          },
+          {
+            name: "Dermaga Wahana Air (Paddle & Jetski)",
+            cat: "Watersports Station",
+            category: "Wahana",
+            coords: [-5.9398, 105.9993],
+            emoji: "🏄",
+            color: "#FF6B4A",
+            desc: "Area lepas landas paddleboard drone dan titik keberangkatan jetski safari serta banana boat."
+          }
+        ];
+
+        pois.forEach(p => {
+          const isPosko = isPoskoFacility(p);
+          const marker = L.marker(p.coords, {
+            icon: createCustomPin(p, isPoskoAnimationEnabled),
+            zIndexOffset: isPosko ? 600 : 0
+          });
+          const catDisplay = p.subCat ? `${p.cat} • ${p.subCat}` : p.cat;
+          marker.bindPopup(`
+            <div style="font-family: 'DM Sans', sans-serif; min-width: 190px;">
+              <div style="font-size: 10px; font-weight: 700; color: ${isPosko ? '#FF6B4A' : p.color}; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">${catDisplay}</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0B1D28; font-family: 'Plus Jakarta Sans', sans-serif; margin-top: 1px;">${p.name}</div>
+              <div style="font-size: 11px; color: #475569; margin-top: 4px; line-height: 1.35;">${p.desc}</div>
+              <div style="margin-top: 8px; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #94A3B8;">📍 ${p.coords[0].toFixed(4)}, ${p.coords[1].toFixed(4)}</div>
+            </div>
+          `);
+          markerGroup.addLayer(marker);
+          poiMarkers.push({ marker, poi: p, isPosko });
+        });
+
+        // Configurable Toggle Handler for 'Posko' Markers (Animated vs Static) via #islandMap Settings Icon
+        const settingsBtn = document.getElementById('islandMapSettingsBtn');
+        const settingsDot = document.getElementById('islandMapSettingsDot');
+        const statusLabel = document.getElementById('poskoAnimStatusLabel');
+        const toggleSwitch = document.getElementById('poskoAnimToggleSwitch');
+        const toggleKnob = document.getElementById('poskoAnimToggleKnob');
+
+        function applyPoskoAnimationState(enabled) {
+          isPoskoAnimationEnabled = Boolean(enabled);
+
+          if (islandMapEl) {
+            islandMapEl.setAttribute('data-posko-animation', isPoskoAnimationEnabled ? 'animated' : 'static');
+            islandMapEl.classList.toggle('static-posko-markers', !isPoskoAnimationEnabled);
+          }
+
+          // Update all Posko Leaflet markers dynamically
+          poiMarkers.forEach(item => {
+            if (item.isPosko) {
+              item.marker.setIcon(createCustomPin(item.poi, isPoskoAnimationEnabled));
+            }
+          });
+
+          // Sync UI controls inside #islandMap
+          if (settingsBtn) {
+            settingsBtn.setAttribute('aria-pressed', String(isPoskoAnimationEnabled));
+            if (isPoskoAnimationEnabled) {
+              settingsBtn.className = 'relative w-8 h-8 rounded-xl bg-[#0B1D28] text-white hover:bg-[#0D9488] border border-[#0B1D28] transition-all duration-150 flex items-center justify-center cursor-pointer active:scale-95';
+            } else {
+              settingsBtn.className = 'relative w-8 h-8 rounded-xl bg-white text-slate-600 hover:bg-[#0B1D28] hover:text-white border border-[#E5DEC9] transition-all duration-150 flex items-center justify-center cursor-pointer active:scale-95';
+            }
+          }
+          if (settingsDot) {
+            settingsDot.className = isPoskoAnimationEnabled
+              ? 'absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#FF6B4A] border-2 border-white'
+              : 'absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-slate-400 border-2 border-white';
+          }
+          if (statusLabel) {
+            statusLabel.textContent = isPoskoAnimationEnabled ? 'Animasi Aktif' : 'Marker Statis';
+            statusLabel.className = isPoskoAnimationEnabled
+              ? 'font-heading font-extrabold text-[11px] text-[#0B1D28] mt-0.5 whitespace-nowrap'
+              : 'font-heading font-extrabold text-[11px] text-slate-500 mt-0.5 whitespace-nowrap';
+          }
+          if (toggleSwitch) {
+            toggleSwitch.setAttribute('aria-checked', String(isPoskoAnimationEnabled));
+            toggleSwitch.className = isPoskoAnimationEnabled
+              ? 'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-[#FF6B4A] transition-colors duration-200 ease-in-out focus:outline-none'
+              : 'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-slate-300 transition-colors duration-200 ease-in-out focus:outline-none';
+          }
+          if (toggleKnob) {
+            toggleKnob.className = isPoskoAnimationEnabled
+              ? 'pointer-events-none inline-block h-4 w-4 translate-x-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out'
+              : 'pointer-events-none inline-block h-4 w-4 translate-x-0 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out';
+          }
+        }
+
+        if (settingsBtn) {
+          settingsBtn.addEventListener('click', function () {
+            applyPoskoAnimationState(!isPoskoAnimationEnabled);
+          });
+        }
+        if (toggleSwitch) {
+          toggleSwitch.addEventListener('click', function () {
+            applyPoskoAnimationState(!isPoskoAnimationEnabled);
+          });
+        }
+
+        // --- 5. Toggle Layer Buttons ---
+        const filterButtons = document.querySelectorAll('.filter-layer-btn');
+        filterButtons.forEach(btn => {
+          btn.addEventListener('click', function () {
+            const zone = this.getAttribute('data-zone');
+            const isActive = this.classList.contains('active');
+
+            if (zone === 'markers') {
+              if (isActive) {
+                map.removeLayer(markerGroup);
+                this.classList.remove('active');
+                this.classList.add('opacity-50', 'bg-slate-100');
+              } else {
+                map.addLayer(markerGroup);
+                this.classList.add('active');
+                this.classList.remove('opacity-50', 'bg-slate-100');
+              }
+              return;
+            }
+
+            const layer = zoneLayers[zone];
+            if (!layer) return;
+
+            if (isActive) {
+              map.removeLayer(layer);
+              this.classList.remove('active');
+              this.classList.add('opacity-50', 'bg-slate-100');
+            } else {
+              map.addLayer(layer);
+              this.classList.add('active');
+              this.classList.remove('opacity-50', 'bg-slate-100');
+            }
+          });
+        });
+
+        // --- 6. Live Geolocation (HTML5 GPS) ---
+        const btnGeoLocate = document.getElementById('btnGeoLocate');
+        const gpsCard = document.getElementById('gpsStatusCard');
+        const gpsText = document.getElementById('gpsStatusText');
+        const gpsAlert = document.getElementById('gpsZoneAlert');
+        const btnCloseGps = document.getElementById('btnCloseGpsCard');
+
+        let userMarker = null;
+        let userCircle = null;
+
+        if (btnCloseGps) {
+          btnCloseGps.addEventListener('click', () => gpsCard.classList.add('hidden'));
+        }
+
+        // Distance in km using Haversine
+        function calcDistanceKm(lat1, lon1, lat2, lon2) {
+          const R = 6371; // Earth radius km
+          const dLat = (lat2 - lat1) * Math.PI / 180;
+          const dLon = (lon2 - lon1) * Math.PI / 180;
+          const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          return R * c;
+        }
+
+        if (btnGeoLocate) {
+          btnGeoLocate.addEventListener('click', function () {
+            gpsCard.classList.remove('hidden');
+            if (!navigator.geolocation) {
+              gpsText.textContent = "Perangkat Anda tidak mendukung fitur Geolocation GPS.";
+              return;
+            }
+
+            gpsText.textContent = "Mengakses satelit GPS & koordinat perangkat Anda...";
+
+            navigator.geolocation.getCurrentPosition(
+              function (position) {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                const accuracy = position.coords.accuracy;
+
+                const distToIsland = calcDistanceKm(userLat, userLng, pulauCoords[0], pulauCoords[1]);
+                let distText = distToIsland < 1 
+                  ? `${Math.round(distToIsland * 1000)} meter dari pusat Pulau Merak Kecil`
+                  : `${distToIsland.toFixed(2)} km dari Pulau Merak Kecil`;
+
+                gpsText.innerHTML = `
+                  <div class="font-bold text-[#0B1D28]">Lokasi Anda Terdeteksi!</div>
+                  <div class="text-[11px] text-slate-500 mt-1">Koordinat: ${userLat.toFixed(5)}, ${userLng.toFixed(5)}</div>
+                  <div class="text-[11px] text-[#0D9488] font-bold mt-0.5">Jarak: ${distText}</div>
+                  <div class="text-[10px] text-slate-400">Akurasi GPS: ±${Math.round(accuracy)}m</div>
+                `;
+
+                if (userMarker) {
+                  map.removeLayer(userMarker);
+                  map.removeLayer(userCircle);
+                }
+
+                // User marker with pulsing effect
+                userMarker = L.circleMarker([userLat, userLng], {
+                  radius: 8,
+                  fillColor: '#FF6B4A',
+                  color: '#FFFFFF',
+                  weight: 3,
+                  opacity: 1,
+                  fillOpacity: 1
+                }).addTo(map);
+
+                userCircle = L.circle([userLat, userLng], {
+                  radius: accuracy,
+                  color: '#FF6B4A',
+                  fillColor: '#FF6B4A',
+                  fillOpacity: 0.12,
+                  weight: 1
+                }).addTo(map);
+
+                userMarker.bindPopup(`
+                  <div style="font-family: 'DM Sans', sans-serif;">
+                    <div style="font-weight: 800; font-size: 13px; color: #FF6B4A;">📍 Posisi Anda Saat Ini</div>
+                    <div style="font-size: 11px; color: #475569; margin-top: 3px;">Jarak ke pulau: ${distText}</div>
+                  </div>
+                `).openPopup();
+
+                // If user is within 10km, pan or fitBounds
+                if (distToIsland < 10) {
+                  const bounds = L.latLngBounds([
+                    [userLat, userLng],
+                    pulauCoords
+                  ]);
+                  map.fitBounds(bounds, { padding: [60, 60] });
+                } else {
+                  map.flyTo([userLat, userLng], 15);
+                }
+
+                // Check danger proximity
+                if (distToIsland < 0.5) {
+                  gpsAlert.classList.remove('hidden');
+                  gpsAlert.className = 'mt-2 text-[11px] font-sans font-semibold p-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200';
+                  gpsAlert.textContent = "✅ Anda berada di area Pulau Merak Kecil. Tetap perhatikan papan peringatan posko.";
+                } else {
+                  gpsAlert.classList.remove('hidden');
+                  gpsAlert.className = 'mt-2 text-[11px] font-sans font-medium p-2 rounded-xl bg-slate-100 text-slate-700';
+                  gpsAlert.textContent = "ℹ️ Anda berada di luar pulau. Siap menyebrang dari Dermaga Pantai Mabak?";
+                }
+              },
+              function (err) {
+                gpsText.textContent = `Gagal mendeteksi lokasi GPS (${err.message}). Pastikan izin lokasi diaktifkan.`;
+              },
+              { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+          });
+        }
+
+        // --- 7. Catalog Category Filter Tabs ---
+        const catButtons = document.querySelectorAll('.cat-filter-btn');
+        const packageCards = document.querySelectorAll('.package-card');
+
+        catButtons.forEach(btn => {
+          btn.addEventListener('click', function () {
+            const targetCat = this.getAttribute('data-cat');
+
+            catButtons.forEach(b => {
+              b.classList.remove('active', 'bg-[#0B1D28]', 'text-white');
+              b.classList.add('text-slate-600', 'hover:text-[#0B1D28]');
+            });
+            this.classList.add('active', 'bg-[#0B1D28]', 'text-white');
+            this.classList.remove('text-slate-600', 'hover:text-[#0B1D28]');
+
+            packageCards.forEach((card, idx) => {
+              const cardCat = card.getAttribute('data-cat');
+              if (targetCat === 'all' || cardCat === targetCat) {
+                card.style.display = 'flex';
+                card.style.setProperty('--reveal-delay', `${(idx % 3) * 60}ms`);
+                requestAnimationFrame(() => {
+                  card.classList.add('is-revealed');
+                });
+              } else {
+                card.style.display = 'none';
+              }
+            });
+          });
+        });
+
+        // --- 8. Dynamic Weather Condition Switcher (Lucide SVG Icons) ---
+        const weatherPresets = {
+          cerah: {
+            label: 'Cerah Tropis',
+            temp: '31°C · UV 8',
+            wave: '0.1 — 0.3 Meter',
+            wind: '5–8 Knot (Timur)',
+            advisory: 'Sangat Aman untuk Berenang, Snorkeling & Paddleboard.',
+            ticker: 'Selat Sunda Tenang (Gelombang 0.1–0.3m) · Cuaca Cerah Tropis 31°C · Kuota DDK Tersedia',
+            wrapperClass: 'w-11 h-11 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-500 shrink-0 transition-colors duration-300',
+            advisoryClass: 'text-[11px] text-emerald-700 font-medium flex items-center gap-1.5 pt-0.5',
+            dotClass: 'w-2 h-2 rounded-full bg-emerald-500 shrink-0',
+            svg: `<svg class="w-6 h-6 animate-[spin_18s_linear_infinite]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`
+          },
+          berawan: {
+            label: 'Cerah Berawan',
+            temp: '29°C · Teduh',
+            wave: '0.2 — 0.4 Meter',
+            wind: '7–10 Knot (Barat)',
+            advisory: 'Aman untuk Berenang, Snorkeling & Paddleboard.',
+            ticker: 'Selat Sunda Tenang (Gelombang 0.2–0.4m) · Cuaca Cerah Berawan · Kuota DDK Tersedia',
+            wrapperClass: 'w-11 h-11 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-[#0D9488] shrink-0 transition-colors duration-300',
+            advisoryClass: 'text-[11px] text-emerald-700 font-medium flex items-center gap-1.5 pt-0.5',
+            dotClass: 'w-2 h-2 rounded-full bg-emerald-500 shrink-0',
+            svg: `<svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg>`
+          },
+          'angin-barat': {
+            label: 'Angin Barat Kencang',
+            temp: '27°C · Berangin',
+            wave: '0.8 — 1.3 Meter',
+            wind: '15–20 Knot (Barat)',
+            advisory: 'Waspada Gelombang Barat! Hanya berenang di Pantai Timur.',
+            ticker: 'WASPADA ANGIN BARAT (Gelombang 0.8–1.3m) · Hanya Berenang di Zona Aman Timur',
+            wrapperClass: 'w-11 h-11 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-[#E11D48] shrink-0 transition-colors duration-300',
+            advisoryClass: 'text-[11px] text-[#E11D48] font-bold flex items-center gap-1.5 pt-0.5',
+            dotClass: 'w-2 h-2 rounded-full bg-[#E11D48] animate-ping shrink-0',
+            svg: `<svg class="w-6 h-6 animate-pulse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.8 19.6A2 2 0 1 0 14 16H2"/><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"/><path d="M9.8 4.4A2 2 0 1 1 11 8H2"/></svg>`
+          }
+        };
+
+        const weatherButtons = document.querySelectorAll('.weather-mode-btn');
+        const weatherIconWrapper = document.getElementById('weatherIconWrapper');
+        const weatherConditionTitle = document.getElementById('weatherConditionTitle');
+        const weatherTempBadge = document.getElementById('weatherTempBadge');
+        const weatherWaveValue = document.getElementById('weatherWaveValue');
+        const weatherWindValue = document.getElementById('weatherWindValue');
+        const weatherAdvisoryBox = document.getElementById('weatherAdvisoryBox');
+        const weatherAdvisoryDot = document.getElementById('weatherAdvisoryDot');
+        const weatherAdvisoryText = document.getElementById('weatherAdvisoryText');
+        const liveWeatherTickerText = document.getElementById('liveWeatherTickerText');
+
+        weatherButtons.forEach(btn => {
+          btn.addEventListener('click', function () {
+            const mode = this.getAttribute('data-weather');
+            const preset = weatherPresets[mode];
+            if (!preset) return;
+
+            weatherButtons.forEach(b => {
+              b.classList.remove('active', 'bg-[#0B1D28]', 'text-white', 'shadow-xs');
+              b.classList.add('text-slate-500', 'hover:text-[#0B1D28]');
+            });
+            this.classList.add('active', 'bg-[#0B1D28]', 'text-white', 'shadow-xs');
+            this.classList.remove('text-slate-500', 'hover:text-[#0B1D28]');
+
+            if (weatherIconWrapper) {
+              weatherIconWrapper.className = preset.wrapperClass;
+              weatherIconWrapper.innerHTML = preset.svg;
+            }
+            if (weatherConditionTitle) weatherConditionTitle.textContent = preset.label;
+            if (weatherTempBadge) weatherTempBadge.textContent = preset.temp;
+            if (weatherWaveValue) weatherWaveValue.textContent = preset.wave;
+            if (weatherWindValue) weatherWindValue.textContent = preset.wind;
+            if (weatherAdvisoryBox) weatherAdvisoryBox.className = preset.advisoryClass;
+            if (weatherAdvisoryDot) weatherAdvisoryDot.className = preset.dotClass;
+            if (weatherAdvisoryText) weatherAdvisoryText.textContent = preset.advisory;
+            if (liveWeatherTickerText) liveWeatherTickerText.textContent = preset.ticker;
+          });
+        });
+
+        // --- 9. Intersection Observer Reveal Animation for Bento Cards ---
+        const bentoTargets = document.querySelectorAll(
+          'main .rounded-3xl, #posko .grid > .rounded-2xl'
+        );
+
+        // Group siblings by parent to assign staggered reveal delays
+        const parentMap = new Map();
+        bentoTargets.forEach(el => {
+          // Skip hidden drawers
+          if (el.id === 'zoneInfoDrawer') return;
+          el.classList.add('bento-reveal');
+          const parent = el.parentElement;
+          if (!parentMap.has(parent)) {
+            parentMap.set(parent, []);
+          }
+          const siblings = parentMap.get(parent);
+          const staggerIndex = siblings.length % 4;
+          el.style.setProperty('--reveal-delay', `${staggerIndex * 80}ms`);
+          siblings.push(el);
+        });
+
+        if ('IntersectionObserver' in window) {
+          const bentoObserver = new IntersectionObserver(
+            (entries, observer) => {
+              entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                  const target = entry.target;
+                  target.classList.add('is-revealed');
+                  // Reset delay after initial entrance so hover effects have zero lag
+                  setTimeout(() => {
+                    target.style.setProperty('--reveal-delay', '0ms');
+                  }, 750);
+                  observer.unobserve(target);
+                }
+              });
+            },
+            {
+              root: null,
+              rootMargin: '0px 0px -45px 0px',
+              threshold: 0.1
+            }
+          );
+
+          bentoTargets.forEach(el => {
+            if (el.id !== 'zoneInfoDrawer') {
+              bentoObserver.observe(el);
+            }
+          });
+        } else {
+          // Fallback for browsers without IntersectionObserver
+          bentoTargets.forEach(el => el.classList.add('is-revealed'));
+        }
+
+        // --- 10. Thematic Map Fullscreen Lightbox Modal ---
+        const thematicModal = document.getElementById('thematicMapModal');
+        const btnOpenThematic = document.getElementById('btnOpenThematicModal');
+        const previewTrigger = document.getElementById('thematicMapPreviewTrigger');
+        const btnCloseThematic = document.getElementById('btnCloseThematicModal');
+
+        function openThematicModal() {
+          if (!thematicModal) return;
+          thematicModal.classList.remove('hidden');
+          thematicModal.classList.add('flex');
+        }
+
+        function closeThematicModal() {
+          if (!thematicModal) return;
+          thematicModal.classList.add('hidden');
+          thematicModal.classList.remove('flex');
+        }
+
+        if (btnOpenThematic) btnOpenThematic.addEventListener('click', openThematicModal);
+        if (previewTrigger) {
+          previewTrigger.addEventListener('click', openThematicModal);
+          previewTrigger.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openThematicModal();
+            }
+          });
+        }
+        if (btnCloseThematic) btnCloseThematic.addEventListener('click', closeThematicModal);
+        if (thematicModal) {
+          thematicModal.addEventListener('click', function (e) {
+            if (e.target === thematicModal) closeThematicModal();
+          });
+        }
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') closeThematicModal();
+        });
+
+      });
+    </script>
+
+    <!-- FULLSCREEN LIGHTBOX MODAL FOR THEMATIC MAP -->
+    <div id="thematicMapModal" role="dialog" aria-modal="true" aria-label="Peta Tematik Pulau Merak Kecil Layar Penuh"
+         class="hidden fixed inset-0 z-[2000] bg-[#0B1D28]/90 backdrop-blur-md p-4 sm:p-8 items-center justify-center">
+      <div class="relative max-w-6xl w-full bg-white rounded-3xl p-3 sm:p-5 border-2 border-[#E5DEC9] shadow-2xl space-y-3 max-h-[94vh] flex flex-col">
+        <div class="flex items-center justify-between gap-4 px-2">
+          <div class="flex items-center gap-2.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#10B981]"></span>
+            <span class="font-heading font-extrabold text-sm sm:text-base text-[#0B1D28]">Peta Tematik Resmi Pulau Merak Kecil</span>
+            <span class="hidden sm:inline-block font-mono text-xs text-slate-400">• Resolusi Penuh</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <a href="/assets/aistudio/Pulau_1bf8c81d.png" download="Peta-Tematik-Pulau-Merak-Kecil.png"
+               class="rounded-full px-3.5 py-1.5 text-xs font-mono font-bold bg-[#F7F4EF] hover:bg-[#0D9488] text-[#0B1D28] hover:text-white border border-[#E5DEC9] transition-colors">
+              ⬇️ Unduh PNG
+            </a>
+            <button type="button" id="btnCloseThematicModal" aria-label="Tutup Peta Tematik"
+                    class="rounded-full w-8 h-8 bg-[#0B1D28] hover:bg-[#FF6B4A] text-white font-bold text-sm flex items-center justify-center transition-colors cursor-pointer">
+              ✕
+            </button>
+          </div>
+        </div>
+        <div class="overflow-auto rounded-2xl border border-[#E5DEC9] bg-[#0B4F5C]">
+          <img src="/assets/aistudio/Pulau_1bf8c81d.png" alt="Peta Tematik Pulau Merak Kecil Resolusi Penuh" class="w-full h-auto block object-contain" />
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
